@@ -6,7 +6,7 @@ from pathlib import Path
 
 from p1scraper import config, db
 from p1scraper.fetch import FetchError, fetch_year_page
-from p1scraper.join_schools import build_matches, load_overrides, load_primary_schools, write_unmatched_log
+from p1scraper.join_schools import build_matches, load_overrides, load_p1_schools, write_unmatched_log
 from p1scraper.parse import ParseError, parse_year_page
 
 log = logging.getLogger(__name__)
@@ -50,12 +50,12 @@ def main(argv: list[str] | None = None) -> int:
 
         log.info("Parsed %s: %d schools, %d phase records", year, len(blocks), len(records))
 
-    csv_schools = load_primary_schools(config.SCHOOLS_CSV_PATH)
+    csv_schools = load_p1_schools(config.SCHOOLS_CSV_PATH)
     overrides = load_overrides(config.OVERRIDES_CSV_PATH)
     match_result = build_matches(csv_schools, site_schools, overrides)
 
     log.info(
-        "Matched %d/%d CSV primary schools to site slugs (%d unmatched CSV, %d unmatched site)",
+        "Matched %d/%d CSV P1-intake schools to site slugs (%d unmatched CSV, %d unmatched site)",
         len(match_result.matched), len(csv_schools),
         len(match_result.unmatched_csv), len(match_result.unmatched_site),
     )

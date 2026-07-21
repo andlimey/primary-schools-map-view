@@ -14,10 +14,15 @@ class MatchResult:
     unmatched_site: list[tuple[str, str]]  # (slug, display_name)
 
 
-def load_primary_schools(csv_path: Path) -> list[dict]:
+_ELIGIBLE_MAINLEVEL_CODES = ("PRIMARY", "MIXED LEVEL (P1-S4)")
+
+
+def load_p1_schools(csv_path: Path) -> list[dict]:
+    """Load schools with a Primary 1 intake: PRIMARY schools, plus mixed-level schools
+    whose registration spans P1 through secondary (e.g. Catholic High, Maris Stella High)."""
     with csv_path.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
-        return [row for row in reader if row["mainlevel_code"].strip() == "PRIMARY"]
+        return [row for row in reader if row["mainlevel_code"].strip() in _ELIGIBLE_MAINLEVEL_CODES]
 
 
 def load_overrides(overrides_path: Path) -> dict[str, str]:
