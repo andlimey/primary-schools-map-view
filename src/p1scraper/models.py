@@ -37,3 +37,17 @@ class PhaseRecord:
     applied: int | None
     taken: int | None
     balloting: BallotingDetail | None
+
+
+@dataclass(frozen=True)
+class GeocodeResult:
+    latitude: float
+    longitude: float
+    source: str          # 'postal_code' | 'address'
+    confidence: float | None
+
+
+@dataclass(frozen=True)
+class GeocodeFailure:
+    reason: str           # 'not_found' | 'ambiguous' | 'out_of_bounds'
+    candidates: list[dict]

@@ -35,7 +35,11 @@ CREATE TABLE IF NOT EXISTS schools (
     mothertongue2_code  TEXT,
     mothertongue3_code  TEXT,
     match_method        TEXT,   -- 'matched' | 'unmatched'
-    match_confidence    REAL    -- fuzzy score if applicable, else NULL
+    match_confidence    REAL,   -- fuzzy score if applicable, else NULL
+    latitude            REAL,
+    longitude           REAL,
+    geocode_source      TEXT,   -- 'postal_code' | 'address', NULL if ungeocoded
+    geocode_confidence  REAL    -- 1.0 for a single unambiguous result, fuzzy score if disambiguated, else NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_schools_slug ON schools(site_slug);
@@ -86,3 +90,13 @@ CREATE TABLE IF NOT EXISTS unmatched_schools (
     candidate_matches  TEXT,            -- top-3 fuzzy suggestions + scores, JSON string, for manual review
     detected_at        TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS geocoding_review (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    school_id          INTEGER NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    reason             TEXT NOT NULL,   -- 'not_found' | 'ambiguous' | 'out_of_bounds'
+    candidate_results  TEXT,            -- JSON array of raw OneMap results considered, for manual review
+    detected_at        TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_geocoding_review_school ON geocoding_review(school_id);

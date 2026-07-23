@@ -6,3 +6,4 @@ data/output.sqlite3
 cache/
 logs/
 *.egg-info/
+.env

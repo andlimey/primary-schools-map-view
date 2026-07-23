@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from p1scraper.join_schools import MatchResult
-from p1scraper.models import PhaseRecord
+from p1scraper.models import GeocodeFailure, GeocodeResult, PhaseRecord
 
 # All schools table columns sourced directly from the CSV (subset of the 31 CSV columns,
 # excluding school_name/mainlevel_code which are handled specially).
@@ -25,8 +25,28 @@ def connect(db_path: Path) -> sqlite3.Connection:
     return conn
 
 
+_SCHOOLS_MIGRATED_COLUMNS = {
+    "latitude": "REAL",
+    "longitude": "REAL",
+    "geocode_source": "TEXT",
+    "geocode_confidence": "REAL",
+}
+
+
 def init_schema(conn: sqlite3.Connection, schema_path: Path) -> None:
     conn.executescript(schema_path.read_text())
+    _migrate_schools_columns(conn)
+
+
+def _migrate_schools_columns(conn: sqlite3.Connection) -> None:
+    """CREATE TABLE IF NOT EXISTS in schema.sql only applies to fresh databases; existing
+    databases (e.g. data/output.sqlite3, already populated before these columns were added)
+    need them added explicitly."""
+    existing = {row[1] for row in conn.execute("PRAGMA table_info(schools)")}
+    with conn:
+        for column, column_type in _SCHOOLS_MIGRATED_COLUMNS.items():
+            if column not in existing:
+                conn.execute(f"ALTER TABLE schools ADD COLUMN {column} {column_type}")
 
 
 def upsert_schools(conn: sqlite3.Connection, csv_schools: list[dict], matched: dict[str, str]) -> None:
@@ -136,3 +156,54 @@ def record_scrape_run(
                 error_message,
             ),
         )
+
+
+def schools_needing_geocoding(conn: sqlite3.Connection) -> list[dict]:
+    """Schools with no persisted coordinate yet — covers both never-attempted schools and
+    ones previously flagged for manual review, so a rerun naturally retries failures too."""
+    rows = conn.execute(
+        "SELECT id, school_name, address, postal_code FROM schools WHERE latitude IS NULL"
+    ).fetchall()
+    return [
+        {"id": school_id, "school_name": name, "address": address, "postal_code": postal_code}
+        for school_id, name, address, postal_code in rows
+    ]
+
+
+def save_geocode_result(conn: sqlite3.Connection, school_id: int, result: GeocodeResult) -> None:
+    with conn:
+        conn.execute("DELETE FROM geocoding_review WHERE school_id = ?", (school_id,))
+        conn.execute(
+            "UPDATE schools SET latitude=?, longitude=?, geocode_source=?, geocode_confidence=? WHERE id=?",
+            (result.latitude, result.longitude, result.source, result.confidence, school_id),
+        )
+
+
+def save_geocode_failure(conn: sqlite3.Connection, school_id: int, failure: GeocodeFailure) -> None:
+    with conn:
+        conn.execute("DELETE FROM geocoding_review WHERE school_id = ?", (school_id,))
+        conn.execute(
+            "INSERT INTO geocoding_review (school_id, reason, candidate_results) VALUES (?,?,?)",
+            (school_id, failure.reason, json.dumps(failure.candidates) if failure.candidates else None),
+        )
+
+
+def get_geocoded_schools(conn: sqlite3.Connection) -> list[dict]:
+    rows = conn.execute(
+        """
+        SELECT id, site_slug, school_name, address, latitude, longitude
+        FROM schools
+        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+        """
+    ).fetchall()
+    return [
+        {
+            "id": school_id,
+            "slug": slug,
+            "name": name,
+            "address": address,
+            "latitude": latitude,
+            "longitude": longitude,
+        }
+        for school_id, slug, name, address, latitude, longitude in rows
+    ]
