@@ -1,6 +1,6 @@
-from p1scraper import db
-from p1scraper.config import SCHEMA_PATH
-from p1scraper.models import BallotingDetail, PhaseRecord
+from p1data import db
+from p1data.config import SCHEMA_PATH
+from p1data.models import BallotingDetail, PhaseRecord
 
 
 def _make_conn(tmp_path):

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import requests
 
-from p1scraper.config import BASE_URL, REQUEST_TIMEOUT_SECONDS, USER_AGENT
+from p1data.config import BASE_URL, REQUEST_TIMEOUT_SECONDS, USER_AGENT
 
 
 class FetchError(Exception):

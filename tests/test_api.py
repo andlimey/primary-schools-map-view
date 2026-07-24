@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
-from p1scraper import db
-from p1scraper.config import SCHEMA_PATH
+from p1data import db
+from p1data.config import SCHEMA_PATH
 from schoolsmap.api import app, get_db_path
 
 
@@ -35,7 +35,7 @@ def test_list_schools_returns_geocoded_school(tmp_path):
     conn, client = _client_for(tmp_path)
     db.upsert_schools(conn, [_sample_csv_row()], {"ADMIRALTY PRIMARY SCHOOL": "admiralty"})
     school_id = conn.execute("SELECT id FROM schools").fetchone()[0]
-    from p1scraper.models import GeocodeResult
+    from p1data.models import GeocodeResult
     db.save_geocode_result(
         conn, school_id, GeocodeResult(latitude=1.4426, longitude=103.8000, source="postal_code", confidence=1.0)
     )
@@ -63,7 +63,7 @@ def test_list_schools_excludes_ungeocoded_school(tmp_path):
     geocoded_id = conn.execute(
         "SELECT id FROM schools WHERE school_name = 'ADMIRALTY PRIMARY SCHOOL'"
     ).fetchone()[0]
-    from p1scraper.models import GeocodeResult
+    from p1data.models import GeocodeResult
     db.save_geocode_result(
         conn, geocoded_id, GeocodeResult(latitude=1.4426, longitude=103.8000, source="postal_code", confidence=1.0)
     )

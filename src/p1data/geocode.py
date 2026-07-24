@@ -1,9 +1,9 @@
 import difflib
 from pathlib import Path
 
-from p1scraper import config, onemap
-from p1scraper.models import GeocodeFailure, GeocodeResult
-from p1scraper.normalize import normalize_name
+from p1data import config, onemap
+from p1data.models import GeocodeFailure, GeocodeResult
+from p1data.normalize import normalize_name
 
 
 def zero_pad_postal(postal_code: str) -> str:

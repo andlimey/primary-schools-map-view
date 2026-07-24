@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from p1scraper.parse import (
+from p1data.parse import (
     build_phase_records,
     iter_school_blocks,
     locate_primary_table,

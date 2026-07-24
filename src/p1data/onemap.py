@@ -4,7 +4,7 @@ from pathlib import Path
 
 import requests
 
-from p1scraper import config
+from p1data import config
 
 
 class OneMapError(Exception):

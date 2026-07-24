@@ -4,8 +4,8 @@ from collections.abc import Iterator
 
 from bs4 import BeautifulSoup, Tag
 
-from p1scraper.models import BallotingDetail, PhaseHeader, PhaseRecord, SchoolBlock
-from p1scraper.normalize import normalize_phase_code
+from p1data.models import BallotingDetail, PhaseHeader, PhaseRecord, SchoolBlock
+from p1data.normalize import normalize_phase_code
 
 log = logging.getLogger(__name__)
 

@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from p1scraper.normalize import candidate_keys, normalize_name
+from p1data.normalize import candidate_keys, normalize_name
 
 
 @dataclass

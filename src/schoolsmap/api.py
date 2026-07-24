@@ -4,7 +4,7 @@ from fastapi import Depends, FastAPI
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from p1scraper import config, db
+from p1data import config, db
 
 
 class School(BaseModel):

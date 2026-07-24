@@ -1,5 +1,5 @@
 [project]
-name = "p1scraper"
+name = "p1data"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
@@ -15,8 +15,8 @@ dependencies = [
 dev = ["pytest>=8.0", "httpx>=0.27"]
 
 [project.scripts]
-scrape-p1 = "p1scraper.main:main"
-geocode-schools = "p1scraper.geocode_main:main"
+scrape-p1 = "p1data.main:main"
+geocode-schools = "p1data.geocode_main:main"
 schools-map-api = "schoolsmap.api:run"
 
 [build-system]

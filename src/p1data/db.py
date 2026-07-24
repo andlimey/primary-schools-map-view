@@ -3,8 +3,8 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
-from p1scraper.join_schools import MatchResult
-from p1scraper.models import GeocodeFailure, GeocodeResult, PhaseRecord
+from p1data.join_schools import MatchResult
+from p1data.models import GeocodeFailure, GeocodeResult, PhaseRecord
 
 # All schools table columns sourced directly from the CSV (subset of the 31 CSV columns,
 # excluding school_name/mainlevel_code which are handled specially).

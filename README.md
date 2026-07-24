@@ -5,7 +5,7 @@ school's address, and serves the results as an interactive map.
 
 The project has three parts:
 
-- **`p1scraper`** — scrapes P1 admission phase/balloting data from
+- **`p1data`** — scrapes P1 admission phase/balloting data from
   [sgschooling.com](https://sgschooling.com) and geocodes school addresses via
   [OneMap](https://www.onemap.gov.sg/), storing everything in a local SQLite
   database.
@@ -100,7 +100,7 @@ pytest
 ## Project layout
 
 ```
-src/p1scraper/   scraping, parsing, geocoding, and DB logic
+src/p1data/      scraping, parsing, geocoding, and DB logic
 src/schoolsmap/  FastAPI app serving /api/schools + the frontend build
 frontend/        React + Leaflet map UI
 data/            SQLite DB + school registry CSVs (DB is gitignored)

@@ -4,10 +4,10 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-from p1scraper import config, db
-from p1scraper.fetch import FetchError, fetch_year_page
-from p1scraper.join_schools import build_matches, load_overrides, load_p1_schools, write_unmatched_log
-from p1scraper.parse import ParseError, parse_year_page
+from p1data import config, db
+from p1data.fetch import FetchError, fetch_year_page
+from p1data.join_schools import build_matches, load_overrides, load_p1_schools, write_unmatched_log
+from p1data.parse import ParseError, parse_year_page
 
 log = logging.getLogger(__name__)
 

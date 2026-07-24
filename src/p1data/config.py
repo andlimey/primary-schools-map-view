@@ -2,7 +2,7 @@ from pathlib import Path
 
 BASE_URL = "https://sgschooling.com/year/{year}/"
 YEARS = [2022, 2023, 2024, 2025]
-USER_AGENT = "p1scraper/0.1 (contact: andychan1451@gmail.com)"
+USER_AGENT = "p1data/0.1 (contact: andychan1451@gmail.com)"
 REQUEST_DELAY_SECONDS = 2
 REQUEST_TIMEOUT_SECONDS = 15
 

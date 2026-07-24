@@ -1,4 +1,4 @@
-from p1scraper.normalize import candidate_keys, normalize_name, normalize_phase_code
+from p1data.normalize import candidate_keys, normalize_name, normalize_phase_code
 
 
 def test_normalize_name_strips_punctuation_and_hyphens():

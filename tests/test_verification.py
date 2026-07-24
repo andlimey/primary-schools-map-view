@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from p1scraper import db
-from p1scraper.config import SCHEMA_PATH
-from p1scraper.join_schools import build_matches
-from p1scraper.parse import build_phase_records, iter_school_blocks, locate_primary_table, parse_phase_headers
+from p1data import db
+from p1data.config import SCHEMA_PATH
+from p1data.join_schools import build_matches
+from p1data.parse import build_phase_records, iter_school_blocks, locate_primary_table, parse_phase_headers
 
 FIXTURE_2025 = (Path(__file__).parent / "fixtures" / "admiralty_2025_snippet.html").read_text()
 

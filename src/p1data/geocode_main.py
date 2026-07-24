@@ -6,8 +6,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from p1scraper import config, db, geocode, onemap
-from p1scraper.models import GeocodeFailure, GeocodeResult
+from p1data import config, db, geocode, onemap
+from p1data.models import GeocodeFailure, GeocodeResult
 
 log = logging.getLogger(__name__)
 

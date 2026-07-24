@@ -1,6 +1,6 @@
 import csv
 
-from p1scraper.join_schools import build_matches, load_p1_schools
+from p1data.join_schools import build_matches, load_p1_schools
 
 
 def test_exact_normalized_match():
