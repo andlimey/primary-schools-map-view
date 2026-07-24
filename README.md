@@ -54,21 +54,42 @@ cache with `--use-cache`) and upserts, and the geocoder only processes
 schools that don't already have coordinates. Unmatched schools are written to
 `logs/`.
 
-## Running the app
+## Running the app locally
 
-Build the frontend, then start the API (which also serves the built frontend
-at `/`):
+You need `data/output.sqlite3` populated (see [Pipeline](#pipeline)) before
+either mode below will show any schools.
+
+### Production-style (single origin)
+
+Build the frontend once, then start the API, which also serves the built
+frontend at `/`:
 
 ```bash
 cd frontend && pnpm install && pnpm build && cd ..
 schools-map-api
 ```
 
-The map is then available at `http://localhost:8000`.
+Open `http://localhost:8000` — the map and API are served from the same
+origin.
 
-For frontend development with hot reload instead, run `pnpm dev` inside
-`frontend/` (see [frontend/README.md](frontend/README.md)) alongside
-`schools-map-api` for the API.
+### Development (hot reload)
+
+Run the API and the Vite dev server in two terminals:
+
+```bash
+# terminal 1 — API on :8000
+schools-map-api
+
+# terminal 2 — frontend on :5173 with HMR
+cd frontend
+pnpm install
+pnpm dev
+```
+
+Open `http://localhost:5173`. Vite proxies `/api` requests to
+`http://localhost:8000` (see `frontend/vite.config.ts`), so the API must be
+running first. See [frontend/README.md](frontend/README.md) for more on the
+frontend tooling.
 
 ## Tests
 
