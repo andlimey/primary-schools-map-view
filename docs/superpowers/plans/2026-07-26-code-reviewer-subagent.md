@@ -26,7 +26,7 @@
 **Interfaces:**
 - Produces: a subagent named `code-reviewer`, invocable via the `Agent` tool with `subagent_type: "code-reviewer"`, and eligible for proactive invocation by the main session based on its `description`.
 
-- [ ] **Step 1: Create the subagent definition file**
+- [x] **Step 1: Create the subagent definition file**
 
 Create `.claude/agents/code-reviewer.md` with this exact content:
 
@@ -67,7 +67,7 @@ style, naming, formatting, or architecture.
    invent issues just to have something to report.
 ```
 
-- [ ] **Step 2: Validate the frontmatter is well-formed**
+- [x] **Step 2: Validate the frontmatter is well-formed**
 
 Run:
 ```bash
@@ -87,7 +87,7 @@ print('OK')
 ```
 Expected output: `OK`. (Requires `pyyaml`; if it's not installed in the active venv, run `uv pip install pyyaml` first — it's only needed for this one-off check, not a project dependency.)
 
-- [ ] **Step 3: Manual dry-run validation**
+- [x] **Step 3: Manual dry-run validation**
 
 This step has no automated test — it confirms the agent is actually
 invoked proactively and actually catches a bug, which can only be checked
@@ -108,7 +108,17 @@ by driving a real session.
    on the scratch branch) once validated. Do not merge the scratch bug
    anywhere.
 
-- [ ] **Step 4: Commit**
+**Note on what was actually validated:** this session's harness could not
+dispatch `subagent_type: "code-reviewer"` directly mid-session (the agent
+registry appears fixed at session start and doesn't pick up new
+`.claude/agents/*.md` files created during the session). As a substitute,
+a general-purpose agent was instructed to follow this file's process
+verbatim against a deliberately introduced bug, and it correctly caught
+it — validating the process logic, but not true harness-level proactive
+dispatch. Confirm proactive dispatch in a genuinely fresh CLI session
+before relying on this agent day-to-day.
+
+- [x] **Step 4: Commit**
 
 ```bash
 git add .claude/agents/code-reviewer.md
