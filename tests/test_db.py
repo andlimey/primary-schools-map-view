@@ -67,6 +67,83 @@ def test_replace_year_data_no_duplicates_on_rerun(tmp_path):
     assert len(balloting_rows) == 1
 
 
+def test_get_latest_admissions_returns_latest_year_with_balloting(tmp_path):
+    conn = _make_conn(tmp_path)
+    db.upsert_schools(conn, [_sample_csv_row()], {"ADMIRALTY PRIMARY SCHOOL": "admiralty"})
+    school_id = conn.execute("SELECT id FROM schools").fetchone()[0]
+
+    db.replace_year_data(conn, 2024, [
+        PhaseRecord(year=2024, school_slug="admiralty", phase_label="2C", phase_code="2C", phase_order=1,
+                    vacancy=69, applied=134, taken=69, balloting=None),
+    ])
+    db.replace_year_data(conn, 2025, [
+        PhaseRecord(year=2025, school_slug="admiralty", phase_label="2C", phase_code="2C", phase_order=1,
+                    vacancy=52, applied=87, taken=52,
+                    balloting=BallotingDetail(category_code="SC<1", category_label="SC within 1km needs to ballot",
+                                               applicants=74, vacancies=52)),
+    ])
+
+    result = db.get_latest_admissions(conn)
+
+    assert result["year"] == 2025
+    phases = result["schools"][school_id]
+    assert len(phases) == 1
+    assert phases[0]["phase_label"] == "2C"
+    assert phases[0]["balloting"] == {
+        "category_code": "SC<1",
+        "category_label": "SC within 1km needs to ballot",
+        "applicants": 74,
+        "vacancies": 52,
+    }
+
+
+def test_get_latest_admissions_omits_school_without_latest_year_data(tmp_path):
+    conn = _make_conn(tmp_path)
+    db.upsert_schools(
+        conn,
+        [_sample_csv_row(), _sample_csv_row(name="DAMAI PRIMARY SCHOOL")],
+        {"ADMIRALTY PRIMARY SCHOOL": "admiralty", "DAMAI PRIMARY SCHOOL": "damai"},
+    )
+    admiralty_id = conn.execute(
+        "SELECT id FROM schools WHERE school_name = 'ADMIRALTY PRIMARY SCHOOL'"
+    ).fetchone()[0]
+    damai_id = conn.execute("SELECT id FROM schools WHERE school_name = 'DAMAI PRIMARY SCHOOL'").fetchone()[0]
+
+    db.replace_year_data(conn, 2025, [
+        PhaseRecord(year=2025, school_slug="admiralty", phase_label="2C", phase_code="2C", phase_order=1,
+                    vacancy=52, applied=87, taken=52, balloting=None),
+    ])
+    db.replace_year_data(conn, 2024, [
+        PhaseRecord(year=2024, school_slug="damai", phase_label="2C", phase_code="2C", phase_order=1,
+                    vacancy=69, applied=134, taken=69, balloting=None),
+    ])
+
+    result = db.get_latest_admissions(conn)
+
+    assert result["year"] == 2025
+    assert admiralty_id in result["schools"]
+    assert damai_id not in result["schools"]
+
+
+def test_get_latest_admissions_omits_school_with_no_phase_data(tmp_path):
+    conn = _make_conn(tmp_path)
+    db.upsert_schools(
+        conn,
+        [_sample_csv_row(), _sample_csv_row(name="AI TONG SCHOOL")],
+        {"ADMIRALTY PRIMARY SCHOOL": "admiralty", "AI TONG SCHOOL": "ai-tong"},
+    )
+    ai_tong_id = conn.execute("SELECT id FROM schools WHERE school_name = 'AI TONG SCHOOL'").fetchone()[0]
+
+    db.replace_year_data(conn, 2025, [
+        PhaseRecord(year=2025, school_slug="admiralty", phase_label="2C", phase_code="2C", phase_order=1,
+                    vacancy=52, applied=87, taken=52, balloting=None),
+    ])
+
+    result = db.get_latest_admissions(conn)
+
+    assert ai_tong_id not in result["schools"]
+
+
 def test_replace_year_data_scoped_to_year_leaves_other_years_untouched(tmp_path):
     conn = _make_conn(tmp_path)
     db.upsert_schools(conn, [_sample_csv_row()], {"ADMIRALTY PRIMARY SCHOOL": "admiralty"})

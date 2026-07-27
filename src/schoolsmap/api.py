@@ -26,6 +26,32 @@ class GeocodeCandidate(BaseModel):
     longitude: float
 
 
+class BallotingDetail(BaseModel):
+    category_code: str
+    category_label: str | None
+    applicants: int | None
+    vacancies: int | None
+
+
+class AdmissionPhase(BaseModel):
+    phase_label: str
+    phase_code: str
+    vacancy: int | None
+    applied: int | None
+    taken: int | None
+    balloting: BallotingDetail | None
+
+
+class SchoolAdmissions(BaseModel):
+    school_id: int
+    phases: list[AdmissionPhase]
+
+
+class AdmissionsResponse(BaseModel):
+    year: int | None
+    schools: list[SchoolAdmissions]
+
+
 def get_db_path() -> Path:
     return config.DEFAULT_DB_PATH
 
@@ -39,12 +65,30 @@ def get_schools(db_path: Path = Depends(get_db_path)) -> list[School]:
     return [School(**row) for row in rows]
 
 
+def get_admissions(db_path: Path = Depends(get_db_path)) -> AdmissionsResponse:
+    conn = db.connect(db_path)
+    try:
+        result = db.get_latest_admissions(conn)
+    finally:
+        conn.close()
+    schools = [
+        SchoolAdmissions(school_id=school_id, phases=phases)
+        for school_id, phases in result["schools"].items()
+    ]
+    return AdmissionsResponse(year=result["year"], schools=schools)
+
+
 app = FastAPI(title="Primary Schools Map View API")
 
 
 @app.get("/api/schools", response_model=list[School])
 def list_schools(schools: list[School] = Depends(get_schools)) -> list[School]:
     return schools
+
+
+@app.get("/api/schools/admissions", response_model=AdmissionsResponse)
+def list_admissions(admissions: AdmissionsResponse = Depends(get_admissions)) -> AdmissionsResponse:
+    return admissions
 
 
 def get_geocode_search() -> Callable[[str], list[dict]]:

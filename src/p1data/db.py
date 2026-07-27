@@ -188,6 +188,50 @@ def save_geocode_failure(conn: sqlite3.Connection, school_id: int, failure: Geoc
         )
 
 
+def get_latest_admissions(conn: sqlite3.Connection) -> dict:
+    """Most recent year is a single global value (MAX(year) across all admission_phases),
+    not computed per school. Schools with no phase rows for that year are simply absent
+    from the returned "schools" dict, mirroring how get_geocoded_schools omits ungeocoded
+    schools rather than including them with null data."""
+    year = conn.execute("SELECT MAX(year) FROM admission_phases").fetchone()[0]
+    if year is None:
+        return {"year": None, "schools": {}}
+
+    rows = conn.execute(
+        """
+        SELECT p.school_id, p.phase_label, p.phase_code, p.vacancy, p.applied, p.taken,
+               b.category_code, b.category_label, b.applicants, b.vacancies
+        FROM admission_phases p
+        LEFT JOIN balloting_details b ON b.phase_id = p.id
+        WHERE p.year = ?
+        ORDER BY p.school_id, p.phase_order
+        """,
+        (year,),
+    ).fetchall()
+
+    schools: dict[int, list[dict]] = {}
+    for school_id, phase_label, phase_code, vacancy, applied, taken, cat_code, cat_label, applicants, vacancies in rows:
+        balloting = None
+        if cat_code is not None:
+            balloting = {
+                "category_code": cat_code,
+                "category_label": cat_label,
+                "applicants": applicants,
+                "vacancies": vacancies,
+            }
+        schools.setdefault(school_id, []).append(
+            {
+                "phase_label": phase_label,
+                "phase_code": phase_code,
+                "vacancy": vacancy,
+                "applied": applied,
+                "taken": taken,
+                "balloting": balloting,
+            }
+        )
+    return {"year": year, "schools": schools}
+
+
 def get_geocoded_schools(conn: sqlite3.Connection) -> list[dict]:
     rows = conn.execute(
         """

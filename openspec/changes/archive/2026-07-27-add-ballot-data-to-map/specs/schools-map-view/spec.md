@@ -1,22 +1,4 @@
-# schools-map-view Specification
-
-## Purpose
-Render geocoded schools as pins on an interactive map so users can visually explore school locations.
-
-## Requirements
-### Requirement: Display all geocoded schools as map pins
-The system SHALL render one pin per geocoded school, positioned at that school's coordinates.
-
-#### Scenario: Loading the map
-- **WHEN** the map view loads
-- **THEN** it fetches the schools list from the API and renders one pin per returned school at its geocoded coordinates
-
-### Requirement: Use OpenStreetMap tiles
-The system SHALL render the map's base layer using OpenStreetMap tile imagery, requiring no API key.
-
-#### Scenario: Rendering the base map
-- **WHEN** the map view renders
-- **THEN** it displays OpenStreetMap tile imagery as the base layer without requiring an API key
+## MODIFIED Requirements
 
 ### Requirement: Show basic identifying info on interaction
 The system SHALL show a school's name and address in a popup when its pin is hovered or clicked. The popup SHALL also offer an expandable section showing that school's most-recent-year admission data, collapsed by default.
@@ -25,19 +7,14 @@ The system SHALL show a school's name and address in a popup when its pin is hov
 - **WHEN** a user hovers over or clicks a school's pin
 - **THEN** a popup appears showing that school's name and address, with an expandable "Show admissions" section available and collapsed by default
 
-### Requirement: Map is centered on Singapore by default
-The system SHALL center and zoom the map by default to show the geographic extent of the geocoded schools.
-
-#### Scenario: Initial map view
-- **WHEN** the map view first loads
-- **THEN** it is centered and zoomed to show the geographic extent of Singapore's schools by default
+## ADDED Requirements
 
 ### Requirement: Show most-recent-year admission data on request
-The system SHALL, when a user expands a school's admissions section, display which year the data pertains to, and that school's most recent year of admission phase data: for each phase, its label, vacancy count, applied count, and taken count, and where balloting occurred for a phase, the balloting category, applicants, and vacancies for that category.
+The system SHALL, when a user expands a school's admissions section, display that school's most recent year of admission phase data: for each phase, its label, vacancy count, applied count, and taken count, and where balloting occurred for a phase, the balloting category, applicants, and vacancies for that category.
 
 #### Scenario: Expanding a school with admission data
 - **WHEN** a user expands the admissions section for a school that has admission phase data for the most recent year
-- **THEN** the section shows the year the data is for, followed by a table of that year's phases with vacancy, applied, and taken counts, and balloting category/applicants/vacancies for any phase where balloting occurred
+- **THEN** the section shows a table of that year's phases with vacancy, applied, and taken counts, and balloting category/applicants/vacancies for any phase where balloting occurred
 
 ### Requirement: Load all schools' admission data once
 The system SHALL fetch admission data for all schools in a single request when the map loads, rather than issuing a separate fetch each time an individual school's popup or admissions section is opened.

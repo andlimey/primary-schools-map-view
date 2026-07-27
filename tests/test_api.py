@@ -75,3 +75,65 @@ def test_list_schools_excludes_ungeocoded_school(tmp_path):
     body = resp.json()
     assert len(body) == 1
     assert body[0]["name"] == "ADMIRALTY PRIMARY SCHOOL"
+
+
+def test_list_admissions_includes_school_with_balloting_detail(tmp_path):
+    conn, client = _client_for(tmp_path)
+    db.upsert_schools(conn, [_sample_csv_row()], {"ADMIRALTY PRIMARY SCHOOL": "admiralty"})
+    school_id = conn.execute("SELECT id FROM schools").fetchone()[0]
+
+    from p1data.models import BallotingDetail, PhaseRecord
+    db.replace_year_data(
+        conn,
+        2025,
+        [
+            PhaseRecord(
+                year=2025, school_slug="admiralty", phase_label="2C", phase_code="2C", phase_order=1,
+                vacancy=52, applied=87, taken=52,
+                balloting=BallotingDetail(
+                    category_code="SC<1", category_label="SC within 1km needs to ballot",
+                    applicants=74, vacancies=52,
+                ),
+            ),
+        ],
+    )
+
+    resp = client.get("/api/schools/admissions")
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["year"] == 2025
+    assert len(body["schools"]) == 1
+    entry = body["schools"][0]
+    assert entry["school_id"] == school_id
+    assert entry["phases"][0]["phase_label"] == "2C"
+    assert entry["phases"][0]["balloting"]["category_code"] == "SC<1"
+    assert entry["phases"][0]["balloting"]["applicants"] == 74
+
+
+def test_list_admissions_excludes_school_without_latest_year_data(tmp_path):
+    conn, client = _client_for(tmp_path)
+    db.upsert_schools(
+        conn,
+        [_sample_csv_row(), _sample_csv_row(name="DAMAI PRIMARY SCHOOL", postal_code="649188")],
+        {"ADMIRALTY PRIMARY SCHOOL": "admiralty", "DAMAI PRIMARY SCHOOL": "damai"},
+    )
+
+    from p1data.models import PhaseRecord
+    db.replace_year_data(conn, 2025, [
+        PhaseRecord(year=2025, school_slug="admiralty", phase_label="2C", phase_code="2C", phase_order=1,
+                    vacancy=52, applied=87, taken=52, balloting=None),
+    ])
+    db.replace_year_data(conn, 2024, [
+        PhaseRecord(year=2024, school_slug="damai", phase_label="2C", phase_code="2C", phase_order=1,
+                    vacancy=69, applied=134, taken=69, balloting=None),
+    ])
+
+    resp = client.get("/api/schools/admissions")
+    app.dependency_overrides.clear()
+
+    body = resp.json()
+    assert body["year"] == 2025
+    assert len(body["schools"]) == 1
+    assert body["schools"][0]["phases"][0]["phase_label"] == "2C"
