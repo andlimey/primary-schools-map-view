@@ -1,6 +1,6 @@
 import { useEffect, useState, type KeyboardEvent } from 'react'
-import type { GeocodeCandidate } from '../types'
-import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_QUERY_LENGTH } from '../constants'
+import type { GeocodeCandidate } from './types'
+import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_QUERY_LENGTH } from './constants'
 
 type SearchStatus = 'idle' | 'loading' | 'results' | 'no-results' | 'error'
 

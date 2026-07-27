@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Callable
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -52,6 +52,32 @@ class AdmissionsResponse(BaseModel):
     schools: list[SchoolAdmissions]
 
 
+class SchoolDetail(BaseModel):
+    id: int
+    slug: str | None
+    name: str
+    address: str
+    url_address: str | None
+    zone_code: str | None
+    nature_code: str | None
+    mainlevel_code: str
+
+
+class AdmissionPhaseHistory(BaseModel):
+    year: int
+    phase_label: str
+    phase_code: str
+    vacancy: int | None
+    applied: int | None
+    taken: int | None
+    balloting: BallotingDetail | None
+
+
+class AdmissionsHistoryResponse(BaseModel):
+    school_id: int
+    phases: list[AdmissionPhaseHistory]
+
+
 def get_db_path() -> Path:
     return config.DEFAULT_DB_PATH
 
@@ -78,6 +104,29 @@ def get_admissions(db_path: Path = Depends(get_db_path)) -> AdmissionsResponse:
     return AdmissionsResponse(year=result["year"], schools=schools)
 
 
+def get_school_detail(school_id: int, db_path: Path = Depends(get_db_path)) -> SchoolDetail:
+    conn = db.connect(db_path)
+    try:
+        row = db.get_school_detail(conn, school_id)
+    finally:
+        conn.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="School not found")
+    return SchoolDetail(**row)
+
+
+def get_admissions_history(school_id: int, db_path: Path = Depends(get_db_path)) -> AdmissionsHistoryResponse:
+    conn = db.connect(db_path)
+    try:
+        detail = db.get_school_detail(conn, school_id)
+        if detail is None:
+            raise HTTPException(status_code=404, detail="School not found")
+        phases = db.get_admissions_history(conn, school_id)
+    finally:
+        conn.close()
+    return AdmissionsHistoryResponse(school_id=school_id, phases=phases)
+
+
 app = FastAPI(title="Primary Schools Map View API")
 
 
@@ -89,6 +138,18 @@ def list_schools(schools: list[School] = Depends(get_schools)) -> list[School]:
 @app.get("/api/schools/admissions", response_model=AdmissionsResponse)
 def list_admissions(admissions: AdmissionsResponse = Depends(get_admissions)) -> AdmissionsResponse:
     return admissions
+
+
+@app.get("/api/schools/{school_id}", response_model=SchoolDetail)
+def get_school(school: SchoolDetail = Depends(get_school_detail)) -> SchoolDetail:
+    return school
+
+
+@app.get("/api/schools/{school_id}/admissions/history", response_model=AdmissionsHistoryResponse)
+def get_school_admissions_history(
+    history: AdmissionsHistoryResponse = Depends(get_admissions_history),
+) -> AdmissionsHistoryResponse:
+    return history
 
 
 def get_geocode_search() -> Callable[[str], list[dict]]:

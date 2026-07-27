@@ -112,6 +112,81 @@ def test_list_admissions_includes_school_with_balloting_detail(tmp_path):
     assert entry["phases"][0]["balloting"]["applicants"] == 74
 
 
+def test_get_school_returns_detail_fields(tmp_path):
+    conn, client = _client_for(tmp_path)
+    db.upsert_schools(conn, [_sample_csv_row()], {"ADMIRALTY PRIMARY SCHOOL": "admiralty"})
+    school_id = conn.execute("SELECT id FROM schools").fetchone()[0]
+
+    resp = client.get(f"/api/schools/{school_id}")
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["name"] == "ADMIRALTY PRIMARY SCHOOL"
+    assert body["slug"] == "admiralty"
+    assert body["address"] == "11 WOODLANDS CIRCLE"
+    assert body["zone_code"] == "NORTH"
+    assert body["nature_code"] == "CO-ED SCHOOL"
+    assert body["mainlevel_code"] == "PRIMARY"
+
+
+def test_get_school_returns_404_for_nonexistent_school(tmp_path):
+    conn, client = _client_for(tmp_path)
+
+    resp = client.get("/api/schools/999")
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 404
+
+
+def test_get_school_admissions_history_returns_all_years(tmp_path):
+    conn, client = _client_for(tmp_path)
+    db.upsert_schools(conn, [_sample_csv_row()], {"ADMIRALTY PRIMARY SCHOOL": "admiralty"})
+    school_id = conn.execute("SELECT id FROM schools").fetchone()[0]
+
+    from p1data.models import BallotingDetail, PhaseRecord
+    db.replace_year_data(conn, 2024, [
+        PhaseRecord(year=2024, school_slug="admiralty", phase_label="2C", phase_code="2C", phase_order=1,
+                    vacancy=69, applied=134, taken=69, balloting=None),
+    ])
+    db.replace_year_data(conn, 2025, [
+        PhaseRecord(year=2025, school_slug="admiralty", phase_label="2C", phase_code="2C", phase_order=1,
+                    vacancy=52, applied=87, taken=52,
+                    balloting=BallotingDetail(category_code="SC<1", category_label="SC within 1km needs to ballot",
+                                               applicants=74, vacancies=52)),
+    ])
+
+    resp = client.get(f"/api/schools/{school_id}/admissions/history")
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["school_id"] == school_id
+    assert [p["year"] for p in body["phases"]] == [2024, 2025]
+    assert body["phases"][1]["balloting"]["category_code"] == "SC<1"
+
+
+def test_get_school_admissions_history_returns_empty_for_school_with_no_data(tmp_path):
+    conn, client = _client_for(tmp_path)
+    db.upsert_schools(conn, [_sample_csv_row()], {"ADMIRALTY PRIMARY SCHOOL": "admiralty"})
+    school_id = conn.execute("SELECT id FROM schools").fetchone()[0]
+
+    resp = client.get(f"/api/schools/{school_id}/admissions/history")
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    assert resp.json()["phases"] == []
+
+
+def test_get_school_admissions_history_returns_404_for_nonexistent_school(tmp_path):
+    conn, client = _client_for(tmp_path)
+
+    resp = client.get("/api/schools/999/admissions/history")
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 404
+
+
 def test_list_admissions_excludes_school_without_latest_year_data(tmp_path):
     conn, client = _client_for(tmp_path)
     db.upsert_schools(

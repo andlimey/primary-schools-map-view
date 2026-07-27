@@ -19,11 +19,11 @@ The system SHALL render the map's base layer using OpenStreetMap tile imagery, r
 - **THEN** it displays OpenStreetMap tile imagery as the base layer without requiring an API key
 
 ### Requirement: Show basic identifying info on interaction
-The system SHALL show a school's name and address in a popup when its pin is hovered or clicked. The popup SHALL also offer an expandable section showing that school's most-recent-year admission data, collapsed by default.
+The system SHALL show a school's name and address in a popup when its pin is hovered or clicked. The popup SHALL also offer an expandable section showing that school's most-recent-year admission data, collapsed by default, and a "More Details" link to that school's dedicated detail page.
 
 #### Scenario: Hovering or clicking a pin
 - **WHEN** a user hovers over or clicks a school's pin
-- **THEN** a popup appears showing that school's name and address, with an expandable "Show admissions" section available and collapsed by default
+- **THEN** a popup appears showing that school's name and address, with an expandable "Show admissions" section available and collapsed by default, and a "More Details" link to that school's detail page
 
 ### Requirement: Map is centered on Singapore by default
 The system SHALL center and zoom the map by default to show the geographic extent of the geocoded schools.
@@ -60,3 +60,14 @@ The system SHALL show an explicit "no admission data" indication in a school's e
 #### Scenario: Expanding a school with no data for the most recent year
 - **WHEN** a user expands the admissions section for a school that has no admission phase records for the most recent year (whether the school has never been matched to admission data, or its most recent available year predates the current most-recent year)
 - **THEN** the section shows an explicit "No admission data" message instead of a table
+
+### Requirement: Prefetch detail page data on pin interaction
+The system SHALL begin fetching a school's detail-page data (its detail fields and full admission history) as soon as that school's popup is opened, rather than waiting until the "More Details" link is clicked.
+
+#### Scenario: Opening a school's popup
+- **WHEN** a user hovers over or clicks a school's pin, opening its popup
+- **THEN** the system begins fetching that school's detail fields and full admission history in the background, independent of whether the user subsequently clicks "More Details"
+
+#### Scenario: Clicking More Details after the popup has been open
+- **WHEN** a user clicks "More Details" after that school's popup has already triggered the prefetch and the prefetch has completed
+- **THEN** the detail page renders from the already-fetched data without issuing new requests for it

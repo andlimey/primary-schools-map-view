@@ -144,6 +144,67 @@ def test_get_latest_admissions_omits_school_with_no_phase_data(tmp_path):
     assert ai_tong_id not in result["schools"]
 
 
+def test_get_school_detail_returns_expected_fields(tmp_path):
+    conn = _make_conn(tmp_path)
+    db.upsert_schools(conn, [_sample_csv_row()], {"ADMIRALTY PRIMARY SCHOOL": "admiralty"})
+    school_id = conn.execute("SELECT id FROM schools").fetchone()[0]
+
+    detail = db.get_school_detail(conn, school_id)
+
+    assert detail == {
+        "id": school_id,
+        "slug": "admiralty",
+        "name": "ADMIRALTY PRIMARY SCHOOL",
+        "address": "11 WOODLANDS CIRCLE",
+        "url_address": None,
+        "zone_code": "NORTH",
+        "nature_code": "CO-ED SCHOOL",
+        "mainlevel_code": "PRIMARY",
+    }
+
+
+def test_get_school_detail_returns_none_for_nonexistent_school(tmp_path):
+    conn = _make_conn(tmp_path)
+
+    assert db.get_school_detail(conn, 999) is None
+
+
+def test_get_admissions_history_returns_all_years_with_balloting(tmp_path):
+    conn = _make_conn(tmp_path)
+    db.upsert_schools(conn, [_sample_csv_row()], {"ADMIRALTY PRIMARY SCHOOL": "admiralty"})
+    school_id = conn.execute("SELECT id FROM schools").fetchone()[0]
+
+    db.replace_year_data(conn, 2024, [
+        PhaseRecord(year=2024, school_slug="admiralty", phase_label="2C", phase_code="2C", phase_order=1,
+                    vacancy=69, applied=134, taken=69, balloting=None),
+    ])
+    db.replace_year_data(conn, 2025, [
+        PhaseRecord(year=2025, school_slug="admiralty", phase_label="2C", phase_code="2C", phase_order=1,
+                    vacancy=52, applied=87, taken=52,
+                    balloting=BallotingDetail(category_code="SC<1", category_label="SC within 1km needs to ballot",
+                                               applicants=74, vacancies=52)),
+    ])
+
+    history = db.get_admissions_history(conn, school_id)
+
+    assert [p["year"] for p in history] == [2024, 2025]
+    assert history[0]["balloting"] is None
+    assert history[1]["balloting"] == {
+        "category_code": "SC<1",
+        "category_label": "SC within 1km needs to ballot",
+        "applicants": 74,
+        "vacancies": 52,
+    }
+
+
+def test_get_admissions_history_returns_empty_for_school_with_no_data(tmp_path):
+    conn = _make_conn(tmp_path)
+    db.upsert_schools(conn, [_sample_csv_row()], {"ADMIRALTY PRIMARY SCHOOL": "admiralty"})
+    school_id = conn.execute("SELECT id FROM schools").fetchone()[0]
+
+    assert db.get_admissions_history(conn, school_id) == []
+
+
 def test_replace_year_data_scoped_to_year_leaves_other_years_untouched(tmp_path):
     conn = _make_conn(tmp_path)
     db.upsert_schools(conn, [_sample_csv_row()], {"ADMIRALTY PRIMARY SCHOOL": "admiralty"})

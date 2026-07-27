@@ -1,4 +1,4 @@
-import type { SchoolAdmissions } from '../types'
+import type { SchoolAdmissions } from './types'
 
 export function AdmissionsTable({ admissions }: { admissions: SchoolAdmissions }) {
   return (

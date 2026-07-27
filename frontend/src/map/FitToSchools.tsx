@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useMap } from 'react-leaflet'
 import L from 'leaflet'
-import type { School } from '../types'
+import type { School } from './types'
 
 export function FitToSchools({ schools }: { schools: School[] }) {
   const map = useMap()

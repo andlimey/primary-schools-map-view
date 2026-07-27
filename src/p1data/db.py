@@ -232,6 +232,67 @@ def get_latest_admissions(conn: sqlite3.Connection) -> dict:
     return {"year": year, "schools": schools}
 
 
+def get_school_detail(conn: sqlite3.Connection, school_id: int) -> dict | None:
+    row = conn.execute(
+        """
+        SELECT id, site_slug, school_name, address, url_address, zone_code, nature_code, mainlevel_code
+        FROM schools
+        WHERE id = ?
+        """,
+        (school_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    school_id, slug, name, address, url_address, zone_code, nature_code, mainlevel_code = row
+    return {
+        "id": school_id,
+        "slug": slug,
+        "name": name,
+        "address": address,
+        "url_address": url_address,
+        "zone_code": zone_code,
+        "nature_code": nature_code,
+        "mainlevel_code": mainlevel_code,
+    }
+
+
+def get_admissions_history(conn: sqlite3.Connection, school_id: int) -> list[dict]:
+    rows = conn.execute(
+        """
+        SELECT p.year, p.phase_label, p.phase_code, p.vacancy, p.applied, p.taken,
+               b.category_code, b.category_label, b.applicants, b.vacancies
+        FROM admission_phases p
+        LEFT JOIN balloting_details b ON b.phase_id = p.id
+        WHERE p.school_id = ?
+        ORDER BY p.year, p.phase_order
+        """,
+        (school_id,),
+    ).fetchall()
+
+    phases = []
+    for year, phase_label, phase_code, vacancy, applied, taken, cat_code, cat_label, applicants, vacancies in rows:
+        balloting = None
+        if cat_code is not None:
+            balloting = {
+                "category_code": cat_code,
+                "category_label": cat_label,
+                "applicants": applicants,
+                "vacancies": vacancies,
+            }
+        phases.append(
+            {
+                "year": year,
+                "phase_label": phase_label,
+                "phase_code": phase_code,
+                "vacancy": vacancy,
+                "applied": applied,
+                "taken": taken,
+                "balloting": balloting,
+            }
+        )
+    return phases
+
+
 def get_geocoded_schools(conn: sqlite3.Connection) -> list[dict]:
     rows = conn.execute(
         """

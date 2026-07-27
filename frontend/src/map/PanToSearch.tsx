@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useMap } from 'react-leaflet'
-import type { GeocodeCandidate } from '../types'
-import { METERS_PER_DEGREE_LAT, SEARCH_RADIUS_METERS } from '../constants'
+import type { GeocodeCandidate } from './types'
+import { METERS_PER_DEGREE_LAT, SEARCH_RADIUS_METERS } from './constants'
 
 export function PanToSearch({ location }: { location: GeocodeCandidate | null }) {
   const map = useMap()
