@@ -2,3 +2,67 @@
   height: 100%;
   width: 100%;
 }
+
+.location-search {
+  position: absolute;
+  top: 70px;
+  left: 10px;
+  z-index: 1000;
+  width: 260px;
+  font-family: inherit;
+}
+
+.location-search-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+}
+
+.location-search-results {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 4px 0;
+  max-height: 220px;
+  overflow-y: auto;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+}
+
+.location-search-results li {
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.location-search-results li.active,
+.location-search-results li:hover {
+  background: #e6f0ff;
+}
+
+.location-search-message {
+  margin-top: 4px;
+  padding: 6px 10px;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+  font-size: 13px;
+  color: #555;
+}
+
+.location-search-error {
+  color: #b00020;
+}
+
+.search-marker-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #e63946;
+  border: 3px solid white;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+}

@@ -1,10 +1,14 @@
 from pathlib import Path
+from typing import Callable
 
 from fastapi import Depends, FastAPI
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from p1data import config, db
+from schoolsmap import geocode_proxy
+
+MIN_GEOCODE_QUERY_LENGTH = 2
 
 
 class School(BaseModel):
@@ -12,6 +16,12 @@ class School(BaseModel):
     slug: str | None
     name: str
     address: str
+    latitude: float
+    longitude: float
+
+
+class GeocodeCandidate(BaseModel):
+    label: str
     latitude: float
     longitude: float
 
@@ -35,6 +45,27 @@ app = FastAPI(title="Primary Schools Map View API")
 @app.get("/api/schools", response_model=list[School])
 def list_schools(schools: list[School] = Depends(get_schools)) -> list[School]:
     return schools
+
+
+def get_geocode_search() -> Callable[[str], list[dict]]:
+    return geocode_proxy.search
+
+
+def get_geocode_candidates(
+    q: str, search: Callable[[str], list[dict]] = Depends(get_geocode_search)
+) -> list[GeocodeCandidate]:
+    if len(q.strip()) < MIN_GEOCODE_QUERY_LENGTH:
+        return []
+    results = search(q)
+    return [
+        GeocodeCandidate(label=r["ADDRESS"], latitude=float(r["LATITUDE"]), longitude=float(r["LONGITUDE"]))
+        for r in results
+    ]
+
+
+@app.get("/api/geocode", response_model=list[GeocodeCandidate])
+def geocode(candidates: list[GeocodeCandidate] = Depends(get_geocode_candidates)) -> list[GeocodeCandidate]:
+    return candidates
 
 
 # The React build (frontend/dist) is mounted at "/" so the API and map are served from a
