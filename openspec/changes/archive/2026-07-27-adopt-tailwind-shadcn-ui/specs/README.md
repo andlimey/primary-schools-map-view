@@ -1,0 +1,1 @@
+No capability or requirement changes in this change — see `proposal.md`'s Capabilities section. This is a purely visual/implementation restyling (Tailwind + shadcn/ui adoption) with no spec-level behavior change, so there are no delta spec files to add here.

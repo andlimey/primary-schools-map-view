@@ -64,7 +64,11 @@ export function MapView() {
           position={[searchedLocation.latitude, searchedLocation.longitude]}
           icon={searchMarkerIcon}
         >
-          <Popup>{searchedLocation.label}</Popup>
+          <Popup className="school-popup" minWidth={160} maxWidth={280}>
+            <div className="bg-card text-card-foreground rounded-xl px-3 py-2 text-sm shadow-lg ring-1 ring-foreground/10">
+              {searchedLocation.label}
+            </div>
+          </Popup>
         </Marker>
       )}
     </MapContainer>

@@ -1,6 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import './school-detail.css'
 import {
   admissionsHistoryQueryKey,
   fetchAdmissionsHistory,
@@ -11,6 +10,7 @@ import {
   schoolsListQueryKey,
 } from './api'
 import { MultiYearAdmissionsTable } from './MultiYearAdmissionsTable'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 export function SchoolDetailPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -39,57 +39,72 @@ export function SchoolDetailPage() {
 
   if (schoolsLoading) {
     return (
-      <div className="school-detail-page">
-        <p>Loading…</p>
+      <div className="mx-auto max-w-2xl px-4 py-6">
+        <p className="text-muted-foreground text-sm">Loading…</p>
       </div>
     )
   }
 
   if (!school) {
     return (
-      <div className="school-detail-page">
-        <Link to="/">← Back to map</Link>
-        <p className="not-found">School not found.</p>
+      <div className="mx-auto max-w-2xl px-4 py-6">
+        <Link to="/" className="text-primary text-sm underline-offset-4 hover:underline">
+          ← Back to map
+        </Link>
+        <p className="text-muted-foreground mt-4 text-sm">School not found.</p>
       </div>
     )
   }
 
   return (
-    <div className="school-detail-page">
-      <Link to="/">← Back to map</Link>
+    <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6 pb-12">
+      <Link to="/" className="text-primary text-sm underline-offset-4 hover:underline">
+        ← Back to map
+      </Link>
 
       {detailLoading || !detail ? (
-        <p>Loading school details…</p>
+        <p className="text-muted-foreground text-sm">Loading school details…</p>
       ) : (
-        <>
-          <h1>{detail.name}</h1>
-          <p>{detail.address}</p>
-          {detail.url_address && (
-            <p>
-              <a href={detail.url_address} target="_blank" rel="noreferrer">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl">{detail.name}</CardTitle>
+            <CardDescription>{detail.address}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {detail.url_address && (
+              <a
+                href={detail.url_address}
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary text-sm underline-offset-4 hover:underline"
+              >
                 {detail.url_address}
               </a>
-            </p>
-          )}
-          <dl>
-            <dt>Zone</dt>
-            <dd>{detail.zone_code ?? '-'}</dd>
-            <dt>Nature</dt>
-            <dd>{detail.nature_code ?? '-'}</dd>
-            <dt>Level</dt>
-            <dd>{detail.mainlevel_code}</dd>
-          </dl>
-        </>
+            )}
+            <dl className="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1 text-sm">
+              <dt className="text-muted-foreground font-medium">Zone</dt>
+              <dd>{detail.zone_code ?? '-'}</dd>
+              <dt className="text-muted-foreground font-medium">Nature</dt>
+              <dd>{detail.nature_code ?? '-'}</dd>
+              <dt className="text-muted-foreground font-medium">Level</dt>
+              <dd>{detail.mainlevel_code}</dd>
+            </dl>
+          </CardContent>
+        </Card>
       )}
 
-      <h2>Admission history</h2>
-      {historyLoading ? (
-        <p>Loading admission history…</p>
-      ) : history && history.phases.length > 0 ? (
-        <MultiYearAdmissionsTable phases={history.phases} />
-      ) : (
-        <p className="no-data-message">No admission data</p>
-      )}
+      <div className="flex flex-col gap-3">
+        <h2 className="text-lg font-medium">Admission history</h2>
+        {historyLoading ? (
+          <p className="text-muted-foreground text-sm">Loading admission history…</p>
+        ) : history && history.phases.length > 0 ? (
+          <Card className="py-0">
+            <MultiYearAdmissionsTable phases={history.phases} />
+          </Card>
+        ) : (
+          <p className="text-muted-foreground text-sm">No admission data</p>
+        )}
+      </div>
     </div>
   )
 }

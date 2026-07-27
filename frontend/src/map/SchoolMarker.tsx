@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import type { School, SchoolAdmissions } from './types'
 import { AdmissionsTable } from './AdmissionsTable'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   admissionsHistoryQueryKey,
   fetchAdmissionsHistory,
@@ -39,36 +41,47 @@ export function SchoolMarker({ school, admissionsById, admissionsYear, admission
 
   return (
     <Marker position={[school.latitude, school.longitude]} eventHandlers={{ popupopen: prefetchDetailPageData }}>
-      <Popup>
-        <strong>{school.name}</strong>
-        <br />
-        {school.address}
-        <div className="admissions-toggle">
-          <button type="button" onClick={() => setExpanded((e) => !e)}>
-            {expanded ? '▾ Hide admissions' : '▸ Show admissions'}
-          </button>
-        </div>
-        {expanded && (
-          <div className="admissions-section">
-            {admissionsLoading ? (
-              <div className="admissions-message">Loading admissions data…</div>
-            ) : admissions ? (
-              <>
-                {admissionsYear !== null && <div className="admissions-year">{admissionsYear} admissions</div>}
-                <AdmissionsTable admissions={admissions} />
-              </>
-            ) : (
-              <div className="admissions-message">
-                No admission data{admissionsYear !== null ? ` for ${admissionsYear}` : ''}
+      <Popup className="school-popup" minWidth={220} maxWidth={340}>
+        <Card size="sm" className="w-full shadow-lg">
+          <CardHeader>
+            <CardTitle>{school.name}</CardTitle>
+            <CardDescription>{school.address}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              className="h-auto justify-start p-0 text-xs"
+              onClick={() => setExpanded((e) => !e)}
+            >
+              {expanded ? '▾ Hide admissions' : '▸ Show admissions'}
+            </Button>
+            {expanded && (
+              <div>
+                {admissionsLoading ? (
+                  <div className="text-muted-foreground text-xs">Loading admissions data…</div>
+                ) : admissions ? (
+                  <>
+                    {admissionsYear !== null && (
+                      <div className="mb-1 text-xs font-semibold">{admissionsYear} admissions</div>
+                    )}
+                    <AdmissionsTable admissions={admissions} />
+                  </>
+                ) : (
+                  <div className="text-muted-foreground text-xs">
+                    No admission data{admissionsYear !== null ? ` for ${admissionsYear}` : ''}
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
-        {school.slug && (
-          <div className="more-details">
-            <Link to={`/schools/${school.slug}`}>More Details</Link>
-          </div>
-        )}
+            {school.slug && (
+              <Link to={`/schools/${school.slug}`} className="text-primary text-xs underline-offset-4 hover:underline">
+                More Details
+              </Link>
+            )}
+          </CardContent>
+        </Card>
       </Popup>
     </Marker>
   )

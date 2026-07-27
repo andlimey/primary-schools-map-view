@@ -1,6 +1,8 @@
 import { useEffect, useState, type KeyboardEvent } from 'react'
 import type { GeocodeCandidate } from './types'
 import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_QUERY_LENGTH } from './constants'
+import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 
 type SearchStatus = 'idle' | 'loading' | 'results' | 'no-results' | 'error'
 
@@ -74,10 +76,10 @@ export function LocationSearch({ onSelect }: { onSelect: (candidate: GeocodeCand
   }
 
   return (
-    <div className="location-search">
-      <input
+    <div className="absolute top-[70px] left-2.5 z-[1000] w-[260px] font-sans">
+      <Input
         type="text"
-        className="location-search-input"
+        className="bg-background shadow-md"
         placeholder="Search address or postal code"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -86,13 +88,19 @@ export function LocationSearch({ onSelect }: { onSelect: (candidate: GeocodeCand
         onBlur={() => setTimeout(() => setIsOpen(false), 100)}
       />
       {isOpen && status === 'results' && (
-        <ul className="location-search-results" role="listbox">
+        <ul
+          role="listbox"
+          className="bg-popover text-popover-foreground mt-1 max-h-[220px] list-none overflow-y-auto rounded-lg border border-border p-0 py-1 shadow-md"
+        >
           {candidates.map((candidate, index) => (
             <li
               key={`${candidate.latitude}-${candidate.longitude}-${index}`}
               role="option"
               aria-selected={index === activeIndex}
-              className={index === activeIndex ? 'active' : ''}
+              className={cn(
+                'cursor-pointer px-2.5 py-1.5 text-sm',
+                index === activeIndex && 'bg-accent text-accent-foreground'
+              )}
               onMouseDown={() => selectCandidate(candidate)}
               onMouseEnter={() => setActiveIndex(index)}
             >
@@ -101,9 +109,15 @@ export function LocationSearch({ onSelect }: { onSelect: (candidate: GeocodeCand
           ))}
         </ul>
       )}
-      {isOpen && status === 'no-results' && <div className="location-search-message">No results found</div>}
+      {isOpen && status === 'no-results' && (
+        <div className="bg-popover text-muted-foreground mt-1 rounded-lg border border-border px-2.5 py-1.5 text-sm shadow-md">
+          No results found
+        </div>
+      )}
       {isOpen && status === 'error' && (
-        <div className="location-search-message location-search-error">Search failed. Please try again.</div>
+        <div className="bg-popover text-destructive mt-1 rounded-lg border border-border px-2.5 py-1.5 text-sm shadow-md">
+          Search failed. Please try again.
+        </div>
       )}
     </div>
   )

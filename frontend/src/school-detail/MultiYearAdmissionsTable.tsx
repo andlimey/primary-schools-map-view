@@ -1,4 +1,5 @@
 import type { AdmissionPhaseHistoryEntry } from './types'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 interface PhaseRow {
   phaseCode: string
@@ -30,45 +31,45 @@ export function MultiYearAdmissionsTable({ phases }: { phases: AdmissionPhaseHis
   const { years, rows } = buildRows(phases)
 
   return (
-    <table className="multi-year-admissions-table">
-      <thead>
-        <tr>
-          <th>Phase</th>
+    <Table className="text-sm">
+      <TableHeader>
+        <TableRow>
+          <TableHead>Phase</TableHead>
           {years.map((year) => (
-            <th key={year}>{year}</th>
+            <TableHead key={year}>{year}</TableHead>
           ))}
-        </tr>
-      </thead>
-      <tbody>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {rows.map((row) => (
-          <tr key={row.phaseCode}>
-            <td>{row.label}</td>
+          <TableRow key={row.phaseCode}>
+            <TableCell className="font-medium whitespace-nowrap">{row.label}</TableCell>
             {years.map((year) => {
               const entry = row.byYear.get(year)
               if (!entry) {
                 return (
-                  <td key={year} className="no-data">
+                  <TableCell key={year} className="text-muted-foreground text-center">
                     -
-                  </td>
+                  </TableCell>
                 )
               }
               return (
-                <td key={year}>
+                <TableCell key={year} className="whitespace-normal">
                   <div>
                     Vacancy {entry.vacancy ?? '-'} · Applied {entry.applied ?? '-'} · Taken {entry.taken ?? '-'}
                   </div>
                   {entry.balloting && (
-                    <div className="balloting-detail">
+                    <div className="text-muted-foreground mt-0.5 text-xs">
                       {entry.balloting.category_code}: {entry.balloting.applicants ?? '?'}/
                       {entry.balloting.vacancies ?? '?'}
                     </div>
                   )}
-                </td>
+                </TableCell>
               )
             })}
-          </tr>
+          </TableRow>
         ))}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   )
 }
