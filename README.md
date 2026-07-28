@@ -1,5 +1,7 @@
 # Primary Schools Map View
 
+**Live app:** https://primary-schools-map-view.fly.dev/
+
 Scrapes Singapore Primary 1 (P1) admission balloting data, geocodes each
 school's address, and serves the results as an interactive map.
 
@@ -13,6 +15,13 @@ The project has three parts:
   and hosts the built frontend from the same origin.
 - **`frontend`** — a React + Leaflet map that plots each school as a pin
   using OpenStreetMap tiles (no API key required).
+
+## Screenshots
+
+|                                     Map view                                      |                                Distance-band search                                 |
+| :---------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------: |
+| ![Map of Singapore with a pin for every P1 school](docs/screenshots/main-map.png) | ![Searched address with 1km/2km distance-band circles and legend](docs/screenshots/distance-bands.png) |
+| All P1 schools plotted on OpenStreetMap tiles.                                     | Searching an address highlights schools within 1km (green) and 1-2km (orange), with straight-line distance bands and a legend. |
 
 ## Prerequisites
 
@@ -108,8 +117,9 @@ frontend tooling.
 
 The app is a single Docker image (multi-stage build: the frontend is built
 in a Node stage, then copied into a Python runtime stage alongside the
-committed `data/schools.sqlite3`) deployed to a single always-on Fly.io
-machine.
+committed `data/schools.sqlite3`) deployed to a single Fly.io machine that
+scales to zero when idle (Fly Machines wake from stopped in ~1-3s, so this
+only bills for compute while serving requests).
 
 ```bash
 # one-time setup, from your machine
