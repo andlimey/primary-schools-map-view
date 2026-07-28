@@ -39,7 +39,7 @@ cp .env.example .env
 
 ## Pipeline
 
-Run these in order to populate `data/output.sqlite3`:
+Run these in order to populate `data/schools.sqlite3`:
 
 ```bash
 # 1. Scrape P1 admission data from sgschooling.com for the configured years
@@ -54,9 +54,22 @@ cache with `--use-cache`) and upserts, and the geocoder only processes
 schools that don't already have coordinates. Unmatched schools are written to
 `logs/`.
 
+`data/schools.sqlite3` is committed to the repo (it's small and changes
+infrequently — roughly once a year, when a new P1 admission exercise is
+scraped). After rerunning the pipeline, review the diff and commit the
+refreshed file:
+
+```bash
+git add data/schools.sqlite3
+git commit -m "Refresh school/admission data"
+```
+
+This is also how deployed data gets updated — see
+[Deploying](#deploying).
+
 ## Running the app locally
 
-You need `data/output.sqlite3` populated (see [Pipeline](#pipeline)) before
+You need `data/schools.sqlite3` populated (see [Pipeline](#pipeline)) before
 either mode below will show any schools.
 
 ### Production-style (single origin)
@@ -91,6 +104,34 @@ Open `http://localhost:5173`. Vite proxies `/api` requests to
 running first. See [frontend/README.md](frontend/README.md) for more on the
 frontend tooling.
 
+## Deploying
+
+The app is a single Docker image (multi-stage build: the frontend is built
+in a Node stage, then copied into a Python runtime stage alongside the
+committed `data/schools.sqlite3`) deployed to a single always-on Fly.io
+machine.
+
+```bash
+# one-time setup, from your machine
+fly auth login
+fly apps create <your-app-name>   # match the `app` name in fly.toml
+fly secrets set ONEMAP_EMAIL=... ONEMAP_PASSWORD=...
+fly deploy
+```
+
+After that, `.github/workflows/deploy.yml` handles ongoing deploys:
+`pytest` and the frontend build/lint run as a merge gate on every push and
+pull request, and a merge to `main` that passes the gate triggers
+`flyctl deploy` automatically, authenticated with the `FLY_API_TOKEN`
+repository secret (generate one with `fly tokens create deploy` and add it
+under the repo's Settings → Secrets and variables → Actions).
+
+Because the database is baked into the image rather than mounted from
+persistent storage, **a deployed instance only picks up new data on its next
+deploy** — rerunning the pipeline against a live instance does nothing.
+Refresh data by following the [Pipeline](#pipeline) steps locally, commit
+the result, and push/merge to `main` as usual.
+
 ## Tests
 
 ```bash
@@ -103,7 +144,7 @@ pytest
 src/p1data/      scraping, parsing, geocoding, and DB logic
 src/schoolsmap/  FastAPI app serving /api/schools + the frontend build
 frontend/        React + Leaflet map UI
-data/            SQLite DB + school registry CSVs (DB is gitignored)
+data/            SQLite DB (committed) + school registry CSVs
 cache/           cached scrape/geocode responses (gitignored)
 logs/            unmatched-school reports from scraper runs (gitignored)
 openspec/        specs describing this project's behavior

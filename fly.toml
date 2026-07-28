@@ -1,0 +1,18 @@
+# Generated as a starting point for this change; the app name below must be
+# registered under your Fly.io account (e.g. `fly apps create <name>`) before
+# `fly deploy` will work. Rename it if it's already taken globally.
+app = "primary-schools-map-view"
+primary_region = "sin"
+
+[build]
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

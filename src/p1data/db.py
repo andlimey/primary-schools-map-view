@@ -40,7 +40,7 @@ def init_schema(conn: sqlite3.Connection, schema_path: Path) -> None:
 
 def _migrate_schools_columns(conn: sqlite3.Connection) -> None:
     """CREATE TABLE IF NOT EXISTS in schema.sql only applies to fresh databases; existing
-    databases (e.g. data/output.sqlite3, already populated before these columns were added)
+    databases (e.g. data/schools.sqlite3, already populated before these columns were added)
     need them added explicitly."""
     existing = {row[1] for row in conn.execute("PRAGMA table_info(schools)")}
     with conn:

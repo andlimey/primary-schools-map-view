@@ -14,7 +14,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 CACHE_DIR = PROJECT_ROOT / "cache"
 LOGS_DIR = PROJECT_ROOT / "logs"
 
-DEFAULT_DB_PATH = DATA_DIR / "output.sqlite3"
+DEFAULT_DB_PATH = DATA_DIR / "schools.sqlite3"
 OVERRIDES_CSV_PATH = DATA_DIR / "school_slug_overrides.csv"
 
 ONEMAP_TOKEN_URL = "https://www.onemap.gov.sg/api/auth/post/getToken"
