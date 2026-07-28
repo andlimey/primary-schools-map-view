@@ -5,6 +5,7 @@ export interface SchoolDetail {
   slug: string | null
   name: string
   address: string
+  postal_code: string | null
   url_address: string | null
   zone_code: string | null
   nature_code: string | null

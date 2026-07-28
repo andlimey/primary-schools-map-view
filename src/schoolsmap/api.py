@@ -16,6 +16,7 @@ class School(BaseModel):
     slug: str | None
     name: str
     address: str
+    postal_code: str | None
     latitude: float
     longitude: float
 
@@ -57,6 +58,7 @@ class SchoolDetail(BaseModel):
     slug: str | None
     name: str
     address: str
+    postal_code: str | None
     url_address: str | None
     zone_code: str | None
     nature_code: str | None

@@ -68,7 +68,9 @@ export function SchoolDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-xl">{detail.name}</CardTitle>
-            <CardDescription>{detail.address}</CardDescription>
+            <CardDescription>
+              {detail.postal_code ? `${detail.address}, ${detail.postal_code}` : detail.address}
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             {detail.url_address && (

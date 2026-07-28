@@ -22,7 +22,7 @@ interface SchoolMarkerProps {
 }
 
 export function SchoolMarker({ school, admissionsById, admissionsYear, admissionsLoading }: SchoolMarkerProps) {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(true)
   const admissions = admissionsById.get(school.id)
   const queryClient = useQueryClient()
 
@@ -45,9 +45,11 @@ export function SchoolMarker({ school, admissionsById, admissionsYear, admission
         <Card size="sm" className="w-full shadow-lg">
           <CardHeader>
             <CardTitle>{school.name}</CardTitle>
-            <CardDescription>{school.address}</CardDescription>
+            <CardDescription>
+              {school.postal_code ? `${school.address}, ${school.postal_code}` : school.address}
+            </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-2">
+          <CardContent className="flex flex-col gap-2 min-w-max">
             <Button
               type="button"
               variant="link"

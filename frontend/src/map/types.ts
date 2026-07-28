@@ -5,6 +5,7 @@ export interface School {
   slug: string | null
   name: string
   address: string
+  postal_code: string | null
   latitude: number
   longitude: number
 }

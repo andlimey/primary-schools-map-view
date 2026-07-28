@@ -235,7 +235,7 @@ def get_latest_admissions(conn: sqlite3.Connection) -> dict:
 def get_school_detail(conn: sqlite3.Connection, school_id: int) -> dict | None:
     row = conn.execute(
         """
-        SELECT id, site_slug, school_name, address, url_address, zone_code, nature_code, mainlevel_code
+        SELECT id, site_slug, school_name, address, postal_code, url_address, zone_code, nature_code, mainlevel_code
         FROM schools
         WHERE id = ?
         """,
@@ -243,12 +243,13 @@ def get_school_detail(conn: sqlite3.Connection, school_id: int) -> dict | None:
     ).fetchone()
     if row is None:
         return None
-    school_id, slug, name, address, url_address, zone_code, nature_code, mainlevel_code = row
+    school_id, slug, name, address, postal_code, url_address, zone_code, nature_code, mainlevel_code = row
     return {
         "id": school_id,
         "slug": slug,
         "name": name,
         "address": address,
+        "postal_code": postal_code,
         "url_address": url_address,
         "zone_code": zone_code,
         "nature_code": nature_code,
@@ -296,7 +297,7 @@ def get_admissions_history(conn: sqlite3.Connection, school_id: int) -> list[dic
 def get_geocoded_schools(conn: sqlite3.Connection) -> list[dict]:
     rows = conn.execute(
         """
-        SELECT id, site_slug, school_name, address, latitude, longitude
+        SELECT id, site_slug, school_name, address, postal_code, latitude, longitude
         FROM schools
         WHERE latitude IS NOT NULL AND longitude IS NOT NULL
         """
@@ -307,8 +308,9 @@ def get_geocoded_schools(conn: sqlite3.Connection) -> list[dict]:
             "slug": slug,
             "name": name,
             "address": address,
+            "postal_code": postal_code,
             "latitude": latitude,
             "longitude": longitude,
         }
-        for school_id, slug, name, address, latitude, longitude in rows
+        for school_id, slug, name, address, postal_code, latitude, longitude in rows
     ]

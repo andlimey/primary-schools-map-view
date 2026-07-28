@@ -1,5 +1,7 @@
+import { Info } from 'lucide-react'
 import type { SchoolAdmissions } from './types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 export function AdmissionsTable({ admissions }: { admissions: SchoolAdmissions }) {
   return (
@@ -15,15 +17,28 @@ export function AdmissionsTable({ admissions }: { admissions: SchoolAdmissions }
       </TableHeader>
       <TableBody>
         {admissions.phases.map((phase) => (
-          <TableRow key={phase.phase_code}>
+          <TableRow className={phase.balloting ? "text-red-500" : ""} key={phase.phase_code}>
             <TableCell className="px-1.5 py-1 whitespace-normal">{phase.phase_label}</TableCell>
             <TableCell className="px-1.5 py-1">{phase.vacancy ?? '-'}</TableCell>
             <TableCell className="px-1.5 py-1">{phase.applied ?? '-'}</TableCell>
             <TableCell className="px-1.5 py-1">{phase.taken ?? '-'}</TableCell>
             <TableCell className="px-1.5 py-1 whitespace-normal">
-              {phase.balloting
-                ? `${phase.balloting.category_code}: ${phase.balloting.applicants ?? '?'}/${phase.balloting.vacancies ?? '?'}`
-                : '-'}
+              {phase.balloting ? (
+                <span className="inline-flex items-center gap-1">
+                  {phase.balloting.category_code}: {phase.balloting.applicants ?? '?'}/
+                  {phase.balloting.vacancies ?? '?'}
+                  {phase.balloting.category_label && (
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="size-3 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent className="z-[1000]">{phase.balloting.category_label}</TooltipContent>
+                    </Tooltip>
+                  )}
+                </span>
+              ) : (
+                '-'
+              )}
             </TableCell>
           </TableRow>
         ))}

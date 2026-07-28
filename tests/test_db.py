@@ -156,6 +156,7 @@ def test_get_school_detail_returns_expected_fields(tmp_path):
         "slug": "admiralty",
         "name": "ADMIRALTY PRIMARY SCHOOL",
         "address": "11 WOODLANDS CIRCLE",
+        "postal_code": "738907",
         "url_address": None,
         "zone_code": "NORTH",
         "nature_code": "CO-ED SCHOOL",
