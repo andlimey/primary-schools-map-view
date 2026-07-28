@@ -22,4 +22,4 @@ COPY data/schools.sqlite3 ./data/schools.sqlite3
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
 EXPOSE 8000
-CMD ["uv", "run", "schools-map-api"]
+CMD [".venv/bin/schools-map-api"]
