@@ -3,6 +3,8 @@ import { Marker, Popup } from 'react-leaflet'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import type { School, SchoolAdmissions } from './types'
+import type { DistanceBand } from './distance'
+import { defaultSchoolIcon, within1kmSchoolIcon, within2kmSchoolIcon } from './leaflet-icons'
 import { AdmissionsTable } from './AdmissionsTable'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -19,12 +21,25 @@ interface SchoolMarkerProps {
   admissionsById: Map<number, SchoolAdmissions>
   admissionsYear: number | null
   admissionsLoading: boolean
+  distanceBand: DistanceBand
 }
 
-export function SchoolMarker({ school, admissionsById, admissionsYear, admissionsLoading }: SchoolMarkerProps) {
+const DISTANCE_BAND_ICONS = {
+  'within-1km': within1kmSchoolIcon,
+  'within-2km': within2kmSchoolIcon,
+}
+
+export function SchoolMarker({
+  school,
+  admissionsById,
+  admissionsYear,
+  admissionsLoading,
+  distanceBand,
+}: SchoolMarkerProps) {
   const [expanded, setExpanded] = useState(true)
   const admissions = admissionsById.get(school.id)
   const queryClient = useQueryClient()
+  const icon = distanceBand ? DISTANCE_BAND_ICONS[distanceBand] : defaultSchoolIcon
 
   function prefetchDetailPageData() {
     queryClient.prefetchQuery({
@@ -40,7 +55,11 @@ export function SchoolMarker({ school, admissionsById, admissionsYear, admission
   }
 
   return (
-    <Marker position={[school.latitude, school.longitude]} eventHandlers={{ popupopen: prefetchDetailPageData }}>
+    <Marker
+      position={[school.latitude, school.longitude]}
+      icon={icon}
+      eventHandlers={{ popupopen: prefetchDetailPageData }}
+    >
       <Popup className="school-popup" minWidth={220} maxWidth={340}>
         <Card size="sm" className="w-full shadow-lg">
           <CardHeader>

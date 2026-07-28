@@ -4,11 +4,14 @@ import { useQuery } from '@tanstack/react-query'
 import 'leaflet/dist/leaflet.css'
 import { searchMarkerIcon } from './leaflet-icons'
 import { SINGAPORE_CENTER, DEFAULT_ZOOM } from './constants'
+import { haversineDistanceMeters, getDistanceBand, type DistanceBand } from './distance'
 import type { School, GeocodeCandidate, AdmissionsResponse, SchoolAdmissions } from './types'
 import { FitToSchools } from './FitToSchools'
 import { PanToSearch } from './PanToSearch'
 import { LocationSearch } from './LocationSearch'
 import { SchoolMarker } from './SchoolMarker'
+import { DistanceCircles } from './DistanceCircles'
+import { DistanceLegend } from './DistanceLegend'
 
 function fetchAdmissions(): Promise<AdmissionsResponse> {
   return fetch('/api/schools/admissions').then((res) => {
@@ -41,15 +44,26 @@ export function MapView() {
     return map
   }, [admissionsData])
 
+  const distanceBandsById = useMemo(() => {
+    const map = new Map<number, DistanceBand>()
+    if (!searchedLocation) return map
+    for (const school of schools) {
+      map.set(school.id, getDistanceBand(haversineDistanceMeters(searchedLocation, school)))
+    }
+    return map
+  }, [schools, searchedLocation])
+
   return (
-    <MapContainer center={SINGAPORE_CENTER} zoom={DEFAULT_ZOOM} className="map">
+    <MapContainer center={SINGAPORE_CENTER} zoom={DEFAULT_ZOOM} zoomSnap={0.25} className="map">
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <LocationSearch onSelect={setSearchedLocation} />
+      {searchedLocation && <DistanceLegend />}
       <FitToSchools schools={schools} />
       <PanToSearch location={searchedLocation} />
+      {searchedLocation && <DistanceCircles location={searchedLocation} />}
       {schools.map((school) => (
         <SchoolMarker
           key={school.id}
@@ -57,6 +71,7 @@ export function MapView() {
           admissionsById={admissionsById}
           admissionsYear={admissionsData?.year ?? null}
           admissionsLoading={admissionsLoading}
+          distanceBand={distanceBandsById.get(school.id) ?? null}
         />
       ))}
       {searchedLocation && (

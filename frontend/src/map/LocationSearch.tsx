@@ -1,4 +1,4 @@
-import { useEffect, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import type { GeocodeCandidate } from './types'
 import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_QUERY_LENGTH } from './constants'
 import { Input } from '@/components/ui/input'
@@ -12,8 +12,14 @@ export function LocationSearch({ onSelect }: { onSelect: (candidate: GeocodeCand
   const [status, setStatus] = useState<SearchStatus>('idle')
   const [activeIndex, setActiveIndex] = useState(-1)
   const [isOpen, setIsOpen] = useState(false)
+  const skipNextSearchRef = useRef(false)
 
   useEffect(() => {
+    if (skipNextSearchRef.current) {
+      skipNextSearchRef.current = false
+      return
+    }
+
     const trimmed = query.trim()
     if (trimmed.length < SEARCH_MIN_QUERY_LENGTH) {
       setCandidates([])
@@ -52,6 +58,7 @@ export function LocationSearch({ onSelect }: { onSelect: (candidate: GeocodeCand
   }, [query])
 
   function selectCandidate(candidate: GeocodeCandidate) {
+    skipNextSearchRef.current = true
     onSelect(candidate)
     setQuery(candidate.label)
     setCandidates([])

@@ -3,12 +3,23 @@
   width: 100%;
 }
 
-.search-marker-dot {
+.school-marker-dot {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #e63946;
-  border: 3px solid white;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+  border: 2px solid white;
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.65), 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+.school-marker-dot--default {
+  background: #3b82f6;
+}
+
+.school-marker-dot--within-1km {
+  background: #059669;
+}
+
+.school-marker-dot--within-2km {
+  background: #b45309;
 }
 
