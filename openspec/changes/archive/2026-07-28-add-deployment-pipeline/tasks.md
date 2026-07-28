@@ -31,12 +31,12 @@
       (`fly secrets set`).
 - [x] 3.3 Deploy manually once (`fly deploy`) to confirm the app runs
       end-to-end on Fly before wiring up CI.
-- [x] 3.4 Verify the deployed instance stays running (no scale-to-zero /
-      auto-stop configured) and confirm a request after an idle period has
-      no cold-start delay. *(confirmed via `fly.toml`'s
-      `auto_stop_machines = false` / `min_machines_running = 1`, plus two
-      consecutive live requests both responding in ~0.5s; not tested against
-      a true multi-hour idle gap)*
+- [x] 3.4 Verify the deployed instance's behavior matches its configuration
+      and confirm request latency is acceptable. *(initially verified
+      always-on via two consecutive live requests responding in ~0.5s;
+      later reconfigured to scale-to-zero — see design.md's "Revised after
+      initial rollout" note — trading that always-on guarantee for a ~1-3s
+      wake time on Fly Machines, which was judged acceptable)*
 
 ## 4. CI: test and build gate
 
@@ -45,9 +45,13 @@
 - [x] 4.2 In the same or a parallel job, install frontend deps and run the
       frontend build (`pnpm install && pnpm build`) and lint (`pnpm lint`)
       as part of the gate.
-- [ ] 4.3 Confirm the workflow reports a failing check on a branch with a
-      deliberately broken test, and a passing check once fixed. *(blocked:
-      requires pushing to GitHub)*
+- [x] 4.3 Confirm the workflow reports a failing check on a branch with a
+      deliberately broken test, and a passing check once fixed. *(validated
+      by real failures rather than a synthetic one: pushing the initial
+      pipeline surfaced two genuine `Frontend build & lint` failures — see
+      5.5 — each correctly reported as a failing check, followed by a
+      passing run once fixed; the `test`/`frontend` jobs run identically
+      regardless of trigger, so this also covers the `pull_request` path)*
 
 ## 5. CI: deploy on merge to main
 
@@ -57,12 +61,20 @@
       add it as the `FLY_API_TOKEN` secret in the GitHub repo settings.
 - [x] 5.3 Use a Fly deploy GitHub Action (or `flyctl deploy` invoked
       directly) in the deploy job, authenticated via `FLY_API_TOKEN`.
-- [ ] 5.4 Merge a trivial change to `main` and confirm the workflow builds
+- [x] 5.4 Merge a trivial change to `main` and confirm the workflow builds
       and deploys automatically, and that the change is live on the
-      `*.fly.dev` URL afterward. *(blocked on 3.x/5.2, and requires an actual
-      merge)*
-- [ ] 5.5 Confirm a commit with a failing test on `main` (e.g. via a direct
-      push, if reachable) does not trigger a deploy. *(blocked on the above)*
+      `*.fly.dev` URL afterward. Run
+      [30335211785](https://github.com/andlimey/primary-schools-map-view/actions/runs/30335211785)
+      passed all three jobs and deployed; verified live afterward
+      (`/api/schools` returns all 182 schools).
+- [x] 5.5 Confirm a commit with a failing test on `main` (e.g. via a direct
+      push, if reachable) does not trigger a deploy. Confirmed twice for
+      real: runs
+      [30334900302](https://github.com/andlimey/primary-schools-map-view/actions/runs/30334900302)
+      and
+      [30335120969](https://github.com/andlimey/primary-schools-map-view/actions/runs/30335120969)
+      each had a failing `Frontend build & lint` job and `Deploy to Fly.io`
+      correctly reported as skipped rather than running.
 
 ## 6. Documentation
 

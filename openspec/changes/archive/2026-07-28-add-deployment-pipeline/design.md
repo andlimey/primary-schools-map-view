@@ -17,9 +17,10 @@ scalability or zero-downtime data refresh.
 ## Goals / Non-Goals
 
 **Goals:**
-- Get from `git push` to a running, always-on instance with no manual server
-  steps per deploy.
-- Keep hosting cost low (a few $/mo) and avoid cold starts.
+- Get from `git push` to a running instance with no manual server steps per
+  deploy.
+- Keep hosting cost as low as the platform allows, without giving up
+  reasonable responsiveness.
 - Keep the data refresh workflow simple: a human runs the pipeline locally,
   commits the result, and it ships through the normal deploy path.
 - Gate deploys on the existing test suite passing.
@@ -64,16 +65,35 @@ this design avoids (running the scraper from the production host, managing
 volume backups/migrations) for a benefit (avoiding a ~1-2 minute redeploy
 once a year) that doesn't justify the cost.
 
-### Fly.io, single always-on shared-cpu-1x/256MB machine
-Matches the stated priority: always-on (no cold starts) at a small,
-predictable monthly cost, without owning OS patching, TLS, or a reverse
-proxy (Fly handles TLS termination and health checks). A machine sized for
-a low-traffic FastAPI app serving small JSON payloads and static assets is
-sufficient.
+### Fly.io, single shared-cpu-1x/256MB machine, scale-to-zero when idle
+Matches the stated priority: low, predictable cost, without owning OS
+patching, TLS, or a reverse proxy (Fly handles TLS termination and health
+checks). A machine sized for a low-traffic FastAPI app serving small JSON
+payloads and static assets is sufficient.
+
+**Revised after initial rollout**: the app first launched with
+`min_machines_running = 1` / `auto_stop_machines = false` (always-on), to
+avoid cold starts — reasoning built on the assumption that a stopped
+instance would take tens of seconds to wake, the behavior observed on
+platforms like Render's free tier. Once it became clear that Fly Machines
+are Firecracker microVMs designed for fast start, and wake from a stopped
+state in roughly 1-3 seconds rather than 30-60 seconds, that tradeoff no
+longer held: paying for continuous uptime bought avoidance of a delay small
+enough not to matter for this app's traffic pattern. Reconfigured to
+`auto_stop_machines = true` / `min_machines_running = 0` so the machine
+only runs (and bills) while actually serving requests. Machine *count*
+remains capped at 1 regardless — nothing in this configuration scales the
+number of machines up, since no autoscaling policy is defined; `count`
+is set once at provisioning time (`fly apps create`/`fly scale count`), not
+by `auto_stop`/`auto_start`.
 
 Alternatives considered:
-- **Render free tier**: $0/mo, but sleeps after 15 min idle, which was
-  explicitly ruled out once cold-start behavior was understood.
+- **Render free tier**: $0/mo, but sleeps after 15 min idle with a ~30-60s
+  wake — ruled out initially for that reason, though the reasoning that led
+  to ruling it out (cold starts are unacceptably slow) turned out not to
+  generalize to Fly Machines specifically. Still not chosen, since Fly's
+  scale-to-zero configuration now gets a comparable near-$0 idle cost
+  without Render's slower wake.
 - **Self-managed VPS / Oracle Cloud Always Free**: comparable or lower cost,
   but the operator owns nginx/Caddy config, TLS renewal, and OS security
   patching indefinitely. More control, more ongoing effort — not the
@@ -112,8 +132,8 @@ written to a file that gets committed or logged.
   than done silently.
 - **[Risk] Fly.io pricing/free-tier terms can change.** → Mitigation: verify
   current Fly.io pricing before provisioning the app; the design doesn't
-  depend on any specific promotional tier, just "one small always-on
-  machine."
+  depend on any specific promotional tier, just "one small machine, billed
+  only while running."
 - **[Risk] `/api/geocode` depends on a live OneMap account.** If the account
   or credentials become invalid, or OneMap's auth API changes, live search
   breaks in production with no local fallback to notice it quickly.

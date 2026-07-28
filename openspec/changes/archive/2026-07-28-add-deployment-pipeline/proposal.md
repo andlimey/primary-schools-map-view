@@ -6,8 +6,7 @@ rate-limited scraping pipeline, which makes "how does a server get the data"
 an open question. The app itself is a small, read-mostly monolith (FastAPI
 serving both `/api/*` and the built frontend from one origin) with tiny data
 (652KB DB), so it doesn't need heavyweight infrastructure — it needs a simple,
-low-cost, low-maintenance path from `git push` to a running, always-on
-instance.
+low-cost, low-maintenance path from `git push` to a running instance.
 
 ## What Changes
 
@@ -20,8 +19,8 @@ instance.
 - Add a multi-stage `Dockerfile`: a Node stage builds the frontend
   (`pnpm build`), a Python runtime stage copies in `frontend/dist` and the
   committed `data/schools.sqlite3`, then runs `schools-map-api`.
-- Add `fly.toml` targeting a single always-on Fly.io machine
-  (shared-cpu-1x, 256MB, no volume) on the default `*.fly.dev` subdomain.
+- Add `fly.toml` targeting a single Fly.io machine (shared-cpu-1x, 256MB, no
+  volume, scale-to-zero when idle) on the default `*.fly.dev` subdomain.
 - Add a GitHub Actions workflow:
   - On push/PR: run `pytest` and the frontend build/lint as a merge gate.
   - On merge to `main` (after the gate passes): build the Docker image and
@@ -37,8 +36,8 @@ instance.
 
 ### New Capabilities
 - `deployment-pipeline`: building a deployable image, running CI checks as a
-  merge gate, and deploying that image to an always-on Fly.io machine on
-  merges to `main`.
+  merge gate, and deploying that image to a single-machine Fly.io
+  deployment on merges to `main`.
 
 ### Modified Capabilities
 - `schools-map-api`: the "Data changes after a scraper/geocoding rerun"

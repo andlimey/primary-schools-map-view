@@ -1,5 +1,9 @@
-## ADDED Requirements
+# deployment-pipeline Specification
 
+## Purpose
+TBD - created by archiving change add-deployment-pipeline. Update Purpose after archive.
+
+## Requirements
 ### Requirement: Build a deployable image
 The system SHALL provide a container image build that produces a runnable
 artifact containing the built frontend, the application code, and the
@@ -42,16 +46,24 @@ that change passed, without requiring a manual deploy step.
   automated checks failed
 - **THEN** no deploy is triggered for that commit
 
-### Requirement: Run as a single always-on instance
-The system SHALL run as a single, continuously-running instance on the
-hosting platform, rather than an instance that stops after a period of
-inactivity.
+### Requirement: Run as a single instance, capped at one machine
+The system SHALL run as at most one machine instance on the hosting
+platform at any time; the platform MAY stop that instance during periods of
+inactivity and start it again on the next request, but SHALL NOT run more
+than one instance concurrently absent a deliberate change to the
+provisioned machine count.
 
 #### Scenario: Request after a period of no traffic
 - **WHEN** a client requests the site after an extended period with no
-  incoming requests
-- **THEN** the response is served without a cold-start delay, because the
-  instance was already running
+  incoming requests and the instance has stopped
+- **THEN** the platform starts the instance and serves the response, with
+  the resulting delay bounded by the hosting platform's machine start time
+  rather than a full provisioning or scale-up
+
+#### Scenario: No autoscaling beyond one machine
+- **WHEN** the deployed instance receives concurrent or repeated traffic
+- **THEN** the hosting platform does not provision additional machine
+  instances in response, since no autoscaling policy is configured
 
 ### Requirement: Provide runtime credentials via secrets
 The system SHALL supply credentials required at runtime (OneMap
