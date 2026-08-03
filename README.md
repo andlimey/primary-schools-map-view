@@ -162,3 +162,10 @@ openspec/        specs describing this project's behavior
 
 See `openspec/specs/` for the detailed behavioral specifications behind the
 scraper, geocoder, API, and map view.
+
+## License
+
+This project's code is licensed under the [MIT License](LICENSE). The P1
+admission data is scraped from [sgschooling.com](https://sgschooling.com) and
+addresses are geocoded via [OneMap](https://www.onemap.gov.sg/), each subject
+to their own respective terms of use.
