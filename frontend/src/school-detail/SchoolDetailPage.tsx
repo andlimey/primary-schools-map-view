@@ -9,6 +9,7 @@ import {
   schoolDetailQueryKey,
   schoolsListQueryKey,
 } from './api'
+import { AdmissionTrendChart } from './AdmissionTrendChart'
 import { MultiYearAdmissionsTable } from './MultiYearAdmissionsTable'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
@@ -100,9 +101,12 @@ export function SchoolDetailPage() {
         {historyLoading ? (
           <p className="text-muted-foreground text-sm">Loading admission history…</p>
         ) : history && history.phases.length > 0 ? (
-          <Card className="py-0">
-            <MultiYearAdmissionsTable phases={history.phases} />
-          </Card>
+          <>
+            <AdmissionTrendChart phases={history.phases} />
+            <Card className="py-0">
+              <MultiYearAdmissionsTable phases={history.phases} />
+            </Card>
+          </>
         ) : (
           <p className="text-muted-foreground text-sm">No admission data</p>
         )}
