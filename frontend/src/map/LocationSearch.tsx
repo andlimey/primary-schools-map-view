@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { XIcon } from 'lucide-react'
 import type { GeocodeCandidate } from './types'
 import { SEARCH_DEBOUNCE_MS, SEARCH_MIN_QUERY_LENGTH } from './constants'
 import { Input } from '@/components/ui/input'
@@ -6,8 +7,17 @@ import { cn } from '@/lib/utils'
 
 type SearchStatus = 'idle' | 'loading' | 'results' | 'no-results' | 'error'
 
-export function LocationSearch({ onSelect }: { onSelect: (candidate: GeocodeCandidate) => void }) {
-  const [query, setQuery] = useState('')
+interface LocationSearchProps {
+  /** Search-box text to start with, seeded from the URL's `q` when a valid search is restored. */
+  initialQuery: string
+  /** Commit a chosen candidate as the active search (writes the URL). */
+  onSelect: (candidate: GeocodeCandidate) => void
+  /** Clear the active search and strip its URL params. */
+  onClear: () => void
+}
+
+export function LocationSearch({ initialQuery, onSelect, onClear }: LocationSearchProps) {
+  const [query, setQuery] = useState(initialQuery)
   const [candidates, setCandidates] = useState<GeocodeCandidate[]>([])
   const [status, setStatus] = useState<SearchStatus>('idle')
   const [activeIndex, setActiveIndex] = useState(-1)
@@ -66,6 +76,16 @@ export function LocationSearch({ onSelect }: { onSelect: (candidate: GeocodeCand
     setIsOpen(false)
   }
 
+  function clearSearch() {
+    skipNextSearchRef.current = true
+    setQuery('')
+    setCandidates([])
+    setStatus('idle')
+    setActiveIndex(-1)
+    setIsOpen(false)
+    onClear()
+  }
+
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (!isOpen || candidates.length === 0) return
     if (e.key === 'ArrowDown') {
@@ -84,16 +104,29 @@ export function LocationSearch({ onSelect }: { onSelect: (candidate: GeocodeCand
 
   return (
     <div className="absolute top-[70px] left-2.5 z-[1000] w-[260px] font-sans">
-      <Input
-        type="text"
-        className="bg-background shadow-md"
-        placeholder="Search address or postal code"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onFocus={() => candidates.length > 0 && setIsOpen(true)}
-        onBlur={() => setTimeout(() => setIsOpen(false), 100)}
-      />
+      <div className="relative">
+        <Input
+          type="text"
+          className="bg-background pr-8 shadow-md"
+          placeholder="Search address or postal code"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={() => candidates.length > 0 && setIsOpen(true)}
+          onBlur={() => setTimeout(() => setIsOpen(false), 100)}
+        />
+        {query !== '' && (
+          <button
+            type="button"
+            aria-label="Clear search"
+            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 -translate-y-1/2 rounded-sm p-0.5"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={clearSearch}
+          >
+            <XIcon className="size-4" />
+          </button>
+        )}
+      </div>
       {isOpen && status === 'results' && (
         <ul
           role="listbox"

@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   admissionsHistoryQueryKey,
@@ -12,6 +12,29 @@ import {
 import { AdmissionTrendChart } from './AdmissionTrendChart'
 import { MultiYearAdmissionsTable } from './MultiYearAdmissionsTable'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+
+/**
+ * Returns to the map. When the user reached this page from the map in-app, going
+ * back restores the exact map view they left (including any active search, which
+ * lives in the URL). On a direct visit (bookmark, shared link, refresh) there is
+ * no history to pop, so fall back to the map's default view.
+ */
+function BackToMapButton() {
+  const navigate = useNavigate()
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        const hasHistory = (window.history.state?.idx ?? 0) > 0
+        if (hasHistory) navigate(-1)
+        else navigate('/')
+      }}
+      className="text-primary text-sm underline-offset-4 hover:underline"
+    >
+      ← Back to map
+    </button>
+  )
+}
 
 export function SchoolDetailPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -49,9 +72,7 @@ export function SchoolDetailPage() {
   if (!school) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-6">
-        <Link to="/" className="text-primary text-sm underline-offset-4 hover:underline">
-          ← Back to map
-        </Link>
+        <BackToMapButton />
         <p className="text-muted-foreground mt-4 text-sm">School not found.</p>
       </div>
     )
@@ -59,9 +80,7 @@ export function SchoolDetailPage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6 pb-12">
-      <Link to="/" className="text-primary text-sm underline-offset-4 hover:underline">
-        ← Back to map
-      </Link>
+      <BackToMapButton />
 
       {detailLoading || !detail ? (
         <p className="text-muted-foreground text-sm">Loading school details…</p>

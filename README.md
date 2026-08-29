@@ -130,8 +130,8 @@ fly deploy
 ```
 
 After that, `.github/workflows/deploy.yml` handles ongoing deploys:
-`pytest` and the frontend build/lint run as a merge gate on every push and
-pull request, and a merge to `main` that passes the gate triggers
+`pytest` and the frontend build/lint/test run as a merge gate on every push
+and pull request, and a merge to `main` that passes the gate triggers
 `flyctl deploy` automatically, authenticated with the `FLY_API_TOKEN`
 repository secret (generate one with `fly tokens create deploy` and add it
 under the repo's Settings → Secrets and variables → Actions).
@@ -144,9 +144,22 @@ the result, and push/merge to `main` as usual.
 
 ## Tests
 
+Backend (from the repo root):
+
 ```bash
 pytest
 ```
+
+Frontend (from `frontend/`):
+
+```bash
+pnpm test          # Vitest, single run
+pnpm test:watch    # Vitest, watch mode
+```
+
+The frontend suite uses Vitest + React Testing Library in jsdom; `react-leaflet`
+is mocked at the module boundary so the map components render without a real
+layout engine.
 
 ## Project layout
 

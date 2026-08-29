@@ -1,13 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import 'leaflet/dist/leaflet.css'
 import { searchMarkerIcon } from './leaflet-icons'
 import { SINGAPORE_CENTER, DEFAULT_ZOOM } from './constants'
 import { haversineDistanceMeters, getDistanceBand, type DistanceBand } from './distance'
 import type { School, GeocodeCandidate, AdmissionsResponse, SchoolAdmissions } from './types'
-import { FitToSchools } from './FitToSchools'
-import { PanToSearch } from './PanToSearch'
+import {
+  parseSearchLocation,
+  serializeSearchLocation,
+  SEARCH_PARAM_KEYS,
+} from './searchLocationParams'
+import { useAutoViewport } from './useAutoViewport'
 import { LocationSearch } from './LocationSearch'
 import { SchoolMarker } from './SchoolMarker'
 import { DistanceCircles } from './DistanceCircles'
@@ -20,9 +25,53 @@ function fetchAdmissions(): Promise<AdmissionsResponse> {
   })
 }
 
+/** Null-rendering host for map-context effects, so they can call `useMap()`. */
+function MapEffects({
+  schools,
+  searchedLocation,
+}: {
+  schools: School[]
+  searchedLocation: GeocodeCandidate | null
+}) {
+  useAutoViewport({ schools, searchedLocation })
+  return null
+}
+
 export function MapView() {
   const [schools, setSchools] = useState<School[]>([])
-  const [searchedLocation, setSearchedLocation] = useState<GeocodeCandidate | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // Derive the searched location from the URL (the single source of truth), and
+  // memoise on the raw param strings so its object identity only changes when the
+  // q/lat/lng params do — downstream effects depend on that stability.
+  const rawQ = searchParams.get('q')
+  const rawLat = searchParams.get('lat')
+  const rawLng = searchParams.get('lng')
+  const searchedLocation = useMemo(
+    () => parseSearchLocation(searchParams),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rawQ, rawLat, rawLng],
+  )
+
+  const commitSearchedLocation = useCallback(
+    (candidate: GeocodeCandidate) => {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev)
+        const serialized = serializeSearchLocation(candidate)
+        for (const key of SEARCH_PARAM_KEYS) next.set(key, serialized[key])
+        return next
+      })
+    },
+    [setSearchParams],
+  )
+
+  const clearSearchedLocation = useCallback(() => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      for (const key of SEARCH_PARAM_KEYS) next.delete(key)
+      return next
+    })
+  }, [setSearchParams])
 
   useEffect(() => {
     fetch('/api/schools')
@@ -59,10 +108,13 @@ export function MapView() {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <LocationSearch onSelect={setSearchedLocation} />
+      <LocationSearch
+        initialQuery={searchedLocation?.label ?? ''}
+        onSelect={commitSearchedLocation}
+        onClear={clearSearchedLocation}
+      />
       {searchedLocation && <DistanceLegend />}
-      <FitToSchools schools={schools} />
-      <PanToSearch location={searchedLocation} />
+      <MapEffects schools={schools} searchedLocation={searchedLocation} />
       {searchedLocation && <DistanceCircles location={searchedLocation} />}
       {schools.map((school) => (
         <SchoolMarker

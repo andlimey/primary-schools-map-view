@@ -26,11 +26,15 @@ The system SHALL show a school's name and address in a popup when its pin is hov
 - **THEN** a popup appears showing that school's name and address, with an expandable "Show admissions" section available and collapsed by default, and a "More Details" link to that school's detail page
 
 ### Requirement: Map is centered on Singapore by default
-The system SHALL center and zoom the map by default to show the geographic extent of the geocoded schools.
+The system SHALL center and zoom the map by default to show the geographic extent of the geocoded schools, UNLESS the URL carries a valid searched location, in which case the initial view SHALL instead be framed on that searched location (as defined by the location-search capability) and the fit-to-all-schools framing SHALL NOT override it.
 
 #### Scenario: Initial map view
-- **WHEN** the map view first loads
+- **WHEN** the map view first loads and the URL carries no valid searched location
 - **THEN** it is centered and zoomed to show the geographic extent of Singapore's schools by default
+
+#### Scenario: Initial map view with a searched location in the URL
+- **WHEN** the map view loads with a URL that carries a valid searched location
+- **THEN** the initial viewport is framed on that searched location, and the schools-list load does not subsequently re-fit the viewport to the full extent of schools
 
 ### Requirement: Show most-recent-year admission data on request
 The system SHALL, when a user expands a school's admissions section, display which year the data pertains to, and that school's most recent year of admission phase data: for each phase, its label, vacancy count, applied count, and taken count, and where balloting occurred for a phase, the balloting category, applicants, and vacancies for that category.
