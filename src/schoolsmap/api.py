@@ -1,12 +1,12 @@
 from pathlib import Path
 from typing import Callable
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from p1data import config, db
-from schoolsmap import geocode_proxy
+from schoolsmap import geocode_proxy, route_proxy
 
 MIN_GEOCODE_QUERY_LENGTH = 2
 
@@ -25,6 +25,23 @@ class GeocodeCandidate(BaseModel):
     label: str
     latitude: float
     longitude: float
+
+
+class RouteLeg(BaseModel):
+    mode: str
+    route: str | None
+    path: list[list[float]]
+
+
+class RouteResponse(BaseModel):
+    mode: route_proxy.Mode
+    found: bool
+    duration_seconds: int | None
+    distance_meters: float | None
+    transfers: int | None
+    walk_seconds: int | None
+    walk_only: bool
+    legs: list[RouteLeg]
 
 
 class BallotingDetail(BaseModel):
@@ -173,6 +190,37 @@ def get_geocode_candidates(
 @app.get("/api/geocode", response_model=list[GeocodeCandidate])
 def geocode(candidates: list[GeocodeCandidate] = Depends(get_geocode_candidates)) -> list[GeocodeCandidate]:
     return candidates
+
+
+def get_route_resolver() -> Callable[..., dict]:
+    return route_proxy.resolve_route
+
+
+def _parse_latlng(raw: str, field: str) -> tuple[float, float]:
+    parts = raw.split(",")
+    if len(parts) != 2:
+        raise HTTPException(status_code=422, detail=f"{field} must be 'lat,lng'")
+    try:
+        lat, lng = float(parts[0]), float(parts[1])
+    except ValueError:
+        raise HTTPException(status_code=422, detail=f"{field} must be 'lat,lng' with numeric values")
+    return lat, lng
+
+
+def get_route(
+    from_: str = Query(alias="from"),
+    to: str = Query(),
+    mode: route_proxy.Mode = Query(),
+    resolve: Callable[..., dict] = Depends(get_route_resolver),
+) -> dict:
+    from_lat, from_lng = _parse_latlng(from_, "from")
+    to_lat, to_lng = _parse_latlng(to, "to")
+    return resolve(from_lat, from_lng, to_lat, to_lng, mode)
+
+
+@app.get("/api/route", response_model=RouteResponse)
+def route(result: dict = Depends(get_route)) -> dict:
+    return result
 
 
 # The React build (frontend/dist) is mounted at "/" so the API and map are served from a

@@ -1,5 +1,6 @@
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 
 import requests
@@ -58,3 +59,48 @@ def _cache_path(cache_dir: Path, query: str) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     key = re.sub(r"[^A-Za-z0-9]+", "_", query.strip().upper()).strip("_")
     return cache_dir / f"{key}.json"
+
+
+def route(
+    start: tuple[float, float],
+    end: tuple[float, float],
+    route_type: str,
+    token: str,
+    *,
+    dt: datetime | None = None,
+    # OneMap's default is 1000 m; we widen it because primary schools we care about sit up
+    # to ~2 km from the searched home, and a school with thin bus coverage otherwise
+    # returns NO itinerary at all. A walk-heavy itinerary is a more useful answer than a
+    # blank row (and the caller flags the all-walking case separately).
+    max_walk_distance: int = 2000,
+    timeout: int = config.REQUEST_TIMEOUT_SECONDS,
+) -> dict:
+    """Query OneMap's routing service for a `route_type` of "walk", "drive", or "pt" between
+    two (lat, lng) points, returning the raw JSON response. For "pt", `dt` sets the departure
+    date/time the itinerary is planned around (required by OneMap); it is ignored otherwise."""
+    params = {
+        "start": f"{start[0]},{start[1]}",
+        "end": f"{end[0]},{end[1]}",
+        "routeType": route_type,
+    }
+    if route_type == "pt":
+        if dt is None:
+            raise OneMapError("pt routing requires a departure datetime")
+        params.update(
+            {
+                "date": dt.strftime("%m-%d-%Y"),  # OneMap wants US-style MM-DD-YYYY here
+                "time": dt.strftime("%H:%M:%S"),
+                "mode": "TRANSIT",  # fastest of bus / MRT / LRT, vs BUS-only or RAIL-only
+                "numItineraries": 1,  # we only surface the single fastest trip
+                "maxWalkDistance": max_walk_distance,
+            }
+        )
+
+    resp = requests.get(
+        config.ONEMAP_ROUTE_URL,
+        params=params,
+        headers={"Authorization": token},
+        timeout=timeout,
+    )
+    resp.raise_for_status()
+    return resp.json()

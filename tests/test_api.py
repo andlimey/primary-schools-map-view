@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 
 from p1data import db
 from p1data.config import SCHEMA_PATH
-from schoolsmap.api import app, get_db_path
+from schoolsmap.api import app, get_db_path, get_route_resolver
 
 
 def _make_conn(tmp_path):
@@ -185,6 +185,47 @@ def test_get_school_admissions_history_returns_404_for_nonexistent_school(tmp_pa
     app.dependency_overrides.clear()
 
     assert resp.status_code == 404
+
+
+def _route_payload(mode="walk"):
+    return {
+        "mode": mode, "found": True, "duration_seconds": 900, "distance_meters": 1200.0,
+        "transfers": None, "walk_seconds": None, "walk_only": False,
+        "legs": [{"mode": "WALK", "route": None, "path": [[1.3, 103.8], [1.34, 103.9]]}],
+    }
+
+
+def test_route_returns_payload():
+    calls = []
+
+    def fake_resolve(from_lat, from_lng, to_lat, to_lng, mode):
+        calls.append((from_lat, from_lng, to_lat, to_lng, mode))
+        return _route_payload(mode)
+
+    app.dependency_overrides[get_route_resolver] = lambda: fake_resolve
+    client = TestClient(app)
+    resp = client.get("/api/route", params={"from": "1.30,103.80", "to": "1.34,103.90", "mode": "walk"})
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["duration_seconds"] == 900
+    assert body["legs"][0]["path"] == [[1.3, 103.8], [1.34, 103.9]]
+    assert calls == [(1.30, 103.80, 1.34, 103.90, "walk")]
+
+
+def test_route_rejects_malformed_coordinates():
+    app.dependency_overrides[get_route_resolver] = lambda: (lambda *a: _route_payload())
+    client = TestClient(app)
+    resp = client.get("/api/route", params={"from": "not-a-coord", "to": "1.34,103.90", "mode": "walk"})
+    app.dependency_overrides.clear()
+    assert resp.status_code == 422
+
+
+def test_route_rejects_unknown_mode():
+    client = TestClient(app)
+    resp = client.get("/api/route", params={"from": "1.30,103.80", "to": "1.34,103.90", "mode": "fly"})
+    assert resp.status_code == 422
 
 
 def test_list_admissions_excludes_school_without_latest_year_data(tmp_path):

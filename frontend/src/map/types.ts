@@ -1,5 +1,10 @@
 import type { AdmissionPhase } from '../shared/types'
 
+export interface LatLng {
+  latitude: number
+  longitude: number
+}
+
 export interface School {
   id: number
   slug: string | null

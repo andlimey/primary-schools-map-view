@@ -1,13 +1,9 @@
 import { WITHIN_1KM_METERS, WITHIN_2KM_METERS } from './constants'
+import type { LatLng } from './types'
 
 const EARTH_RADIUS_METERS = 6_371_000
 
 export type DistanceBand = 'within-1km' | 'within-2km' | null
-
-interface LatLng {
-  latitude: number
-  longitude: number
-}
 
 export function haversineDistanceMeters(a: LatLng, b: LatLng): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180

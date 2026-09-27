@@ -2,7 +2,7 @@ import pytest
 import requests
 from fastapi.testclient import TestClient
 
-from schoolsmap import geocode_proxy
+from schoolsmap import geocode_proxy, onemap_token
 from schoolsmap.api import app, get_geocode_search
 
 
@@ -52,7 +52,7 @@ def test_geocode_rejects_too_short_query_without_calling_search():
 
 
 def test_cached_token_reused_across_requests(monkeypatch):
-    monkeypatch.setattr(geocode_proxy, "_cached_token", None)
+    monkeypatch.setattr(onemap_token, "_cached_token", None)
     monkeypatch.setenv("ONEMAP_EMAIL", "test@example.com")
     monkeypatch.setenv("ONEMAP_PASSWORD", "password")
 
@@ -65,7 +65,7 @@ def test_cached_token_reused_across_requests(monkeypatch):
     def fake_search(query, token, *, cache_dir=None):
         return [_result()]
 
-    monkeypatch.setattr(geocode_proxy.onemap, "get_token", fake_get_token)
+    monkeypatch.setattr(onemap_token.onemap, "get_token", fake_get_token)
     monkeypatch.setattr(geocode_proxy.onemap, "search", fake_search)
 
     geocode_proxy.search("first query")
@@ -75,7 +75,7 @@ def test_cached_token_reused_across_requests(monkeypatch):
 
 
 def test_auth_failure_triggers_one_reauth_and_retry(monkeypatch):
-    monkeypatch.setattr(geocode_proxy, "_cached_token", None)
+    monkeypatch.setattr(onemap_token, "_cached_token", None)
     monkeypatch.setenv("ONEMAP_EMAIL", "test@example.com")
     monkeypatch.setenv("ONEMAP_PASSWORD", "password")
 
@@ -95,7 +95,7 @@ def test_auth_failure_triggers_one_reauth_and_retry(monkeypatch):
             raise requests.HTTPError(response=response)
         return [_result()]
 
-    monkeypatch.setattr(geocode_proxy.onemap, "get_token", fake_get_token)
+    monkeypatch.setattr(onemap_token.onemap, "get_token", fake_get_token)
     monkeypatch.setattr(geocode_proxy.onemap, "search", fake_search)
 
     results = geocode_proxy.search("some query")

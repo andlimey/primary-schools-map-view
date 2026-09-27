@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode, Ref } from 'react'
 import { vi } from 'vitest'
 
 /**
@@ -22,6 +22,20 @@ export function resetMapStub() {
 }
 
 /**
+ * Stand-in for the `L.Marker` instance a `<Marker ref>` yields. Shared across every mocked
+ * `<Marker>` — fine for the current tests, which render one marker at a time.
+ */
+export const markerStub = {
+  closePopup: vi.fn(),
+  openPopup: vi.fn(),
+}
+
+export function resetMarkerStub() {
+  markerStub.closePopup.mockReset()
+  markerStub.openPopup.mockReset()
+}
+
+/**
  * Factory for `vi.mock('react-leaflet', ...)`. Renders the layout components as
  * plain elements so children still mount, and returns {@link mapStub} from
  * `useMap()`. Use via:
@@ -39,11 +53,16 @@ export function makeReactLeafletMock() {
       <div data-testid="map-container">{children}</div>
     ),
     TileLayer: () => null,
-    Marker: ({ children }: { children?: ReactNode }) => (
-      <div data-testid="map-marker">{children}</div>
-    ),
+    Marker: ({ children, ref }: { children?: ReactNode; ref?: Ref<typeof markerStub> }) => {
+      if (typeof ref === 'function') ref(markerStub)
+      else if (ref) ref.current = markerStub
+      return <div data-testid="map-marker">{children}</div>
+    },
     Popup: Passthrough,
     Circle: () => <div data-testid="map-circle" />,
+    Polyline: ({ positions }: { positions?: unknown }) => (
+      <div data-testid="map-polyline" data-positions={JSON.stringify(positions ?? [])} />
+    ),
     useMap: () => mapStub,
   }
 }

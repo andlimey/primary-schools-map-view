@@ -25,7 +25,7 @@ export function parseSearchLocation(params: URLSearchParams): GeocodeCandidate |
   return { label: params.get('q') ?? '', latitude, longitude }
 }
 
-function roundCoord(value: number): string {
+export function roundCoord(value: number): string {
   // Number(...) drops any trailing zeros ("1.35" not "1.35000").
   return String(Number(value.toFixed(COORD_DECIMALS)))
 }

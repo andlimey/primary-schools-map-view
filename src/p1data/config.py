@@ -19,6 +19,7 @@ OVERRIDES_CSV_PATH = DATA_DIR / "school_slug_overrides.csv"
 
 ONEMAP_TOKEN_URL = "https://www.onemap.gov.sg/api/auth/post/getToken"
 ONEMAP_SEARCH_URL = "https://www.onemap.gov.sg/api/common/elastic/search"
+ONEMAP_ROUTE_URL = "https://www.onemap.gov.sg/api/public/routingsvc/route"
 ONEMAP_REQUEST_DELAY_SECONDS = 0.5
 GEOCODE_CACHE_DIR = CACHE_DIR / "geocode"
 

@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import type { Marker as LeafletMarker } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { searchMarkerIcon } from './leaflet-icons'
 import { SINGAPORE_CENTER, DEFAULT_ZOOM } from './constants'
@@ -17,6 +18,14 @@ import { LocationSearch } from './LocationSearch'
 import { SchoolMarker } from './SchoolMarker'
 import { DistanceCircles } from './DistanceCircles'
 import { DistanceLegend } from './DistanceLegend'
+import { RouteChip } from './RouteChip'
+import { RouteLayer } from './RouteLayer'
+import type { TravelMode } from './travel'
+
+interface ActiveRoute {
+  schoolId: number
+  mode: TravelMode
+}
 
 function fetchAdmissions(): Promise<AdmissionsResponse> {
   return fetch('/api/schools/admissions').then((res) => {
@@ -40,6 +49,33 @@ function MapEffects({
 export function MapView() {
   const [schools, setSchools] = useState<School[]>([])
   const [searchParams, setSearchParams] = useSearchParams()
+
+  // The one route drawn on the map at a time (across every school). Owned here so a single
+  // fixed-position RouteChip can render it and so the "one at a time" invariant is explicit
+  // rather than an accident of Leaflet's popup auto-close.
+  const [activeRoute, setActiveRoute] = useState<ActiveRoute | null>(null)
+  // Each school's Leaflet marker, so drawing a route can close that school's popup (it would
+  // sit on top of the line) and dismissing the chip can reopen it.
+  const markersRef = useRef(new Map<number, LeafletMarker>())
+
+  const registerMarker = useCallback((schoolId: number, marker: LeafletMarker | null) => {
+    if (marker) markersRef.current.set(schoolId, marker)
+    else markersRef.current.delete(schoolId)
+  }, [])
+
+  const toggleRoute = useCallback((schoolId: number, mode: TravelMode) => {
+    setActiveRoute((current) =>
+      current && current.schoolId === schoolId && current.mode === mode
+        ? null
+        : { schoolId, mode },
+    )
+    markersRef.current.get(schoolId)?.closePopup()
+  }, [])
+
+  const dismissRoute = useCallback(() => {
+    if (activeRoute) markersRef.current.get(activeRoute.schoolId)?.openPopup()
+    setActiveRoute(null)
+  }, [activeRoute])
 
   // Derive the searched location from the URL (the single source of truth), and
   // memoise on the raw param strings so its object identity only changes when the
@@ -102,6 +138,16 @@ export function MapView() {
     return map
   }, [schools, searchedLocation])
 
+  // A drawn route runs from the searched location, so clearing the search clears the route.
+  useEffect(() => {
+    if (!searchedLocation) setActiveRoute(null)
+  }, [searchedLocation])
+
+  const drawnRoute = useMemo(() => {
+    const school = activeRoute && schools.find((s) => s.id === activeRoute.schoolId)
+    return school ? { school, mode: activeRoute.mode } : null
+  }, [activeRoute, schools])
+
   return (
     <MapContainer center={SINGAPORE_CENTER} zoom={DEFAULT_ZOOM} zoomSnap={0.25} className="map">
       <TileLayer
@@ -114,6 +160,17 @@ export function MapView() {
         onClear={clearSearchedLocation}
       />
       {searchedLocation && <DistanceLegend />}
+      {drawnRoute && searchedLocation && (
+        <>
+          <RouteLayer from={searchedLocation} to={drawnRoute.school} mode={drawnRoute.mode} />
+          <RouteChip
+            from={searchedLocation}
+            to={drawnRoute.school}
+            mode={drawnRoute.mode}
+            onDismiss={dismissRoute}
+          />
+        </>
+      )}
       <MapEffects schools={schools} searchedLocation={searchedLocation} />
       {searchedLocation && <DistanceCircles location={searchedLocation} />}
       {schools.map((school) => (
@@ -124,6 +181,10 @@ export function MapView() {
           admissionsYear={admissionsData?.year ?? null}
           admissionsLoading={admissionsLoading}
           distanceBand={distanceBandsById.get(school.id) ?? null}
+          searchedLocation={searchedLocation}
+          activeRouteMode={activeRoute?.schoolId === school.id ? activeRoute.mode : null}
+          onToggleDraw={toggleRoute}
+          onMarkerRef={registerMarker}
         />
       ))}
       {searchedLocation && (
